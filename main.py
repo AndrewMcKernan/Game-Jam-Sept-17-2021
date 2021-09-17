@@ -1,11 +1,15 @@
 import pygame, os
+from random import randint
 
 pygame.font.init()  # for writing text to the screen
 pygame.mixer.init()  # for sound
 
-WIDTH, HEIGHT = 900, 900  # dimensions of screen
+WIDTH, HEIGHT = 777, 777  # dimensions of screen
 
-GRID_WIDTH, GRID_HEIGHT = 10, 10
+# directional codes for walls
+UP, DOWN, LEFT, RIGHT = 0, 1, 2, 3
+
+GRID_WIDTH, GRID_HEIGHT = 7, 7
 BUDDY_WIDTH, BUDDY_HEIGHT = WIDTH // GRID_WIDTH - WIDTH // GRID_WIDTH // 9, HEIGHT // GRID_HEIGHT - HEIGHT // GRID_HEIGHT // 9
 WIN = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("Beginner Jam - Sept 17, 2021")
@@ -59,6 +63,68 @@ def generate_coordinates():
         for y in range(GRID_HEIGHT):
             grid_to_xy[(x, y)] = (x * WIDTH // GRID_WIDTH, y * HEIGHT // GRID_HEIGHT)
     return grid_to_xy
+
+def get_unvisited_neighbours(cell, visited, allowed_cells):
+    neighbours = []
+    neighbour = (cell[0] - 1, cell[1])
+    if neighbours not in visited and neighbour in allowed_cells:
+        neighbours.append(neighbour)
+    neighbour = (cell[0] + 1, cell[1])
+    if neighbours not in visited and neighbour in allowed_cells:
+        neighbours.append(neighbour)
+    neighbour = (cell[0], cell[1] - 1)
+    if neighbours not in visited and neighbour in allowed_cells:
+        neighbours.append(neighbour)
+    neighbour = (cell[0], cell[1] + 1)
+    if neighbours not in visited and neighbour in allowed_cells:
+        neighbours.append(neighbour)
+    return neighbours
+
+def remove_wall(current_cell, chosen_cell, walls):
+    if current_cell[0] == chosen_cell[0]:
+        # the cells have the same x, they are above or below each other
+        if current_cell[1] + 1 == chosen_cell[1]:
+            # the chosen cell is below the current one. Remove the upper wall from the chosen cell,
+            # and the lower one from the current.
+            walls[chosen_cell].remove(UP)
+            walls[current_cell].remove(DOWN)
+        else:
+            # the chosen cell is above the current one. Remove the lower wall from the chosen cell,
+            # and the upper one from the current.
+            walls[chosen_cell].remove(DOWN)
+            walls[current_cell].remove(UP)
+    else:
+        # the cells have the same y, they are to the left or right of each other
+        if current_cell[0] + 1 == chosen_cell[0]:
+            # the chosen cell is to the right of the current one. Remove the left wall from the chosen cell,
+            # and the right one from the current.
+            walls[chosen_cell].remove(LEFT)
+            walls[current_cell].remove(RIGHT)
+        else:
+            # the chosen cell is to the left of the current one. Remove the right wall from the chosen cell,
+            # and the left one from the current.
+            walls[chosen_cell].remove(RIGHT)
+            walls[current_cell].remove(LEFT)
+
+def get_maze(grid):
+    walls = dict()
+    # first, have walls around all cells
+    for cell in grid.keys():
+        walls[cell] = [UP, DOWN, LEFT, RIGHT]
+    # now, remove walls to create the maze. Algorithm from https://en.wikipedia.org/wiki/Maze_generation_algorithm
+    stack = []
+    visited = set((0, 0))
+    stack.append((0, 0))
+    while len(stack) > 0:
+        current_cell = stack.pop()
+        neighbours = get_unvisited_neighbours(current_cell, visited, grid.keys())
+        if len(neighbours) > 0:
+            stack.append(current_cell)
+            index = randint(0, len(neighbours) - 1)
+            chosen_neighbour = neighbours[index]
+            remove_wall(current_cell, chosen_neighbour, walls)
+            visited.add(chosen_neighbour)
+            stack.append(chosen_neighbour)
 
 
 def get_xy_from_coordinates(coordinates, grid):
@@ -114,9 +180,7 @@ def game():
     buddy_rect = pygame.Rect(location_grid[(0, 0)], (BUDDY_WIDTH, BUDDY_HEIGHT))
     current_grid_coordinates = (0, 0)
     #barriers = []
-    barriers = [(5, 0), (5, 1), (5, 2), (0, 2), (1, 2), (2, 2), (3, 2), (6, 2), (7, 2), (8, 2), (5, 4), (6, 4), (7, 4),
-                (8, 4), (1, 5), (2, 5), (3, 5), (4, 5), (5, 5), (5, 5), (5, 6), (6, 6), (7, 6), (8, 6), (9, 6), (0, 7),
-                (1, 7), (2, 7), (3, 7), (5, 7), (3, 8), (5, 8), (7, 8), (3, 9), (7, 9)]
+    barriers = []
     while run:
         clock.tick(FPS)
         for event in pygame.event.get():
