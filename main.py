@@ -1,6 +1,7 @@
 import os
 import pygame
 from maze import *
+from constants import *
 
 pygame.font.init()  # for writing text to the screen
 pygame.mixer.init()  # for sound
@@ -22,7 +23,7 @@ TEXT_FONT = pygame.font.SysFont('lucidaconsole', 40)
 CELL_FONT = pygame.font.SysFont('lucidaconsole', 10)
 
 
-def draw_window(fps_string, buddy_rect, grid, walls, end):
+def draw_window(fps_string, buddy_rect, grid, walls, end, completed_maze):
     pygame.draw.rect(WIN, BLACK, BACKGROUND)
     end_rect = pygame.Rect(get_xy_from_coordinates(end, grid), (WALL_WIDTH, WALL_HEIGHT))
     pygame.draw.rect(WIN, GREEN, end_rect)
@@ -51,6 +52,11 @@ def draw_window(fps_string, buddy_rect, grid, walls, end):
 
     fps_text = TEXT_FONT.render(fps_string, True, WHITE)
     WIN.blit(fps_text, (10, 10))
+
+    if completed_maze:
+        winner_text = TEXT_FONT.render("YOU DID IT YAY!!", True, GREEN)
+        WIN.blit(winner_text, (WIDTH // 2 - winner_text.get_width() // 2, HEIGHT // 2 - winner_text.get_height() // 2))
+
     pygame.display.update()
 
 
@@ -99,9 +105,8 @@ def game():
     location_grid = generate_coordinates()
     buddy_rect = pygame.Rect(location_grid[(0, 0)], (BUDDY_WIDTH, BUDDY_HEIGHT))
     current_grid_coordinates = (0, 0)
-    # barriers = []
     walls, end = get_maze(location_grid)
-    # print('Maze: ' + str(walls))
+    completed_maze = False
     while run:
         clock.tick(FPS)
         for event in pygame.event.get():
@@ -110,10 +115,13 @@ def game():
                 run = False
                 pygame.quit()
             if event.type == pygame.KEYDOWN:
-                current_grid_coordinates = handle_movement(event, buddy_rect, current_grid_coordinates, location_grid,
-                                                           walls)
+                if not completed_maze:
+                    current_grid_coordinates = handle_movement(event, buddy_rect, current_grid_coordinates,
+                                                               location_grid, walls)
+                if current_grid_coordinates == end:
+                    completed_maze = True
 
-        draw_window(frames_string, buddy_rect, location_grid, walls, end)
+        draw_window(frames_string, buddy_rect, location_grid, walls, end, completed_maze)
 
         frames += 1
         current_time_ms = pygame.time.get_ticks() % 1000

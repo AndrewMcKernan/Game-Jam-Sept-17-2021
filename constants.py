@@ -17,3 +17,4 @@ YELLOW = (255, 255, 0)
 IDK = (120, 240, 90)
 
 FPS = 60  # more needs to be done here when frames are dropped - at this point, it will simply slow down the game.
+
