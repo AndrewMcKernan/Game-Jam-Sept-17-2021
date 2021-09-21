@@ -103,8 +103,8 @@ def game():
     time_ms = 0
     frames_string = ''
     location_grid = generate_coordinates()
-    buddy_rect = pygame.Rect(location_grid[(0, 0)], (BUDDY_WIDTH, BUDDY_HEIGHT))
-    current_grid_coordinates = (0, 0)
+    buddy_rect = pygame.Rect(location_grid[(GRID_WIDTH // 2, GRID_HEIGHT // 2)], (BUDDY_WIDTH, BUDDY_HEIGHT))
+    current_grid_coordinates = (GRID_WIDTH // 2, GRID_HEIGHT // 2)
     walls, end = get_maze(location_grid)
     completed_maze = False
     while run:

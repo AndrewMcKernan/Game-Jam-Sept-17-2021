@@ -11,8 +11,9 @@ def get_maze(grid):
     # now, remove walls to create the maze. Algorithm from https://en.wikipedia.org/wiki/Maze_generation_algorithm
     stack = []
     visited = set()
-    visited.add((0, 0))
-    stack.append((0, 0))
+    starting_cell = (GRID_WIDTH // 2, GRID_HEIGHT // 2)
+    visited.add(starting_cell)
+    stack.append(starting_cell)
     not_at_dead_end = True
     while len(stack) > 0:
         current_cell = stack.pop()
@@ -33,7 +34,7 @@ def get_maze(grid):
     highest_dist = 0
     end_cell = (0, 0)
     for end in dead_ends:
-        total_dist = end[0] + end[1]
+        total_dist = abs(end[0] - starting_cell[0]) + abs(end[1] - starting_cell[1])
         if highest_dist < total_dist:
             highest_dist = total_dist
             end_cell = end
