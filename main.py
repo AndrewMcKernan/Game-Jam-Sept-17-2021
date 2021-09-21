@@ -6,18 +6,25 @@ pygame.mixer.init()  # for sound
 
 WIDTH, HEIGHT = 777, 777  # dimensions of screen
 
+
+
 # directional codes for walls
 UP, DOWN, LEFT, RIGHT = 0, 1, 2, 3
 
-GRID_WIDTH, GRID_HEIGHT = 7, 7
+GRID_WIDTH, GRID_HEIGHT = 11, 11
 BUDDY_WIDTH, BUDDY_HEIGHT = WIDTH // GRID_WIDTH - WIDTH // GRID_WIDTH // 9, HEIGHT // GRID_HEIGHT - HEIGHT // GRID_HEIGHT // 9
 WIN = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("Beginner Jam - Sept 17, 2021")
 
+WALL_WIDTH = WIDTH // GRID_WIDTH
+WALL_HEIGHT = HEIGHT // GRID_HEIGHT
+
 WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
 RED = (255, 0, 0)
+GREEN = (0, 255, 0)
 YELLOW = (255, 255, 0)
+IDK = (120, 240, 90)
 
 BACKGROUND = pygame.Rect(0, 0, WIDTH, HEIGHT)
 
@@ -31,24 +38,35 @@ BUDDY = pygame.transform.scale(BUDDY_IMAGE, (BUDDY_WIDTH, BUDDY_HEIGHT))
 BARRIER = pygame.transform.scale(BARRIER_IMAGE, (BUDDY_WIDTH, BUDDY_HEIGHT))
 
 TEXT_FONT = pygame.font.SysFont('lucidaconsole', 40)
+CELL_FONT = pygame.font.SysFont('lucidaconsole', 10)
 
 FPS = 60  # more needs to be done here when frames are dropped - at this point, it will simply slow down the game.
 
 
-def draw_window(fps_string, buddy_rect, grid, barriers):
+def draw_window(fps_string, buddy_rect, grid, walls, end):
     pygame.draw.rect(WIN, BLACK, BACKGROUND)
+    end_rect = pygame.Rect(get_xy_from_coordinates(end, grid), (WALL_WIDTH, WALL_HEIGHT))
+    pygame.draw.rect(WIN, GREEN, end_rect)
 
-    # draw gridlines
-    for x in range(GRID_WIDTH):
-        line = pygame.Rect(grid[x, 0], (1, HEIGHT))
-        pygame.draw.rect(WIN, WHITE, line)
-    for y in range(GRID_HEIGHT):
-        line = pygame.Rect(grid[0, y], (WIDTH, 1))
-        pygame.draw.rect(WIN, WHITE, line)
-
-    for barrier in barriers:
-        xy = grid[barrier]
-        WIN.blit(BARRIER, (xy[0] + WIDTH // GRID_WIDTH // 18, xy[1] + HEIGHT // GRID_HEIGHT // 18))
+    # draw walls
+    for cell in walls:
+        for wall in walls[cell]:
+            if wall == UP:
+                line = pygame.Rect(get_xy_from_coordinates(cell, grid), (WALL_WIDTH, 1))
+                pygame.draw.rect(WIN, WHITE, line)
+            if wall == DOWN:
+                coords = get_xy_from_coordinates(cell, grid)
+                coords = (coords[0], coords[1] + WALL_HEIGHT)
+                line = pygame.Rect(coords, (WALL_WIDTH, 1))
+                pygame.draw.rect(WIN, WHITE, line)
+            if wall == LEFT:
+                line = pygame.Rect(get_xy_from_coordinates(cell, grid), (1, WALL_HEIGHT))
+                pygame.draw.rect(WIN, RED, line)
+            if wall == RIGHT:
+                coords = get_xy_from_coordinates(cell, grid)
+                coords = (coords[0] + WALL_WIDTH, coords[1])
+                line = pygame.Rect(coords, (1, WALL_HEIGHT))
+                pygame.draw.rect(WIN, RED, line)
 
     WIN.blit(BUDDY, (buddy_rect.x + WIDTH // GRID_WIDTH // 18, buddy_rect.y + HEIGHT // GRID_HEIGHT // 18))
 
@@ -64,21 +82,23 @@ def generate_coordinates():
             grid_to_xy[(x, y)] = (x * WIDTH // GRID_WIDTH, y * HEIGHT // GRID_HEIGHT)
     return grid_to_xy
 
+
 def get_unvisited_neighbours(cell, visited, allowed_cells):
     neighbours = []
     neighbour = (cell[0] - 1, cell[1])
-    if neighbours not in visited and neighbour in allowed_cells:
+    if neighbour not in visited and neighbour in allowed_cells:
         neighbours.append(neighbour)
     neighbour = (cell[0] + 1, cell[1])
-    if neighbours not in visited and neighbour in allowed_cells:
+    if neighbour not in visited and neighbour in allowed_cells:
         neighbours.append(neighbour)
     neighbour = (cell[0], cell[1] - 1)
-    if neighbours not in visited and neighbour in allowed_cells:
+    if neighbour not in visited and neighbour in allowed_cells:
         neighbours.append(neighbour)
     neighbour = (cell[0], cell[1] + 1)
-    if neighbours not in visited and neighbour in allowed_cells:
+    if neighbour not in visited and neighbour in allowed_cells:
         neighbours.append(neighbour)
     return neighbours
+
 
 def remove_wall(current_cell, chosen_cell, walls):
     if current_cell[0] == chosen_cell[0]:
@@ -106,25 +126,43 @@ def remove_wall(current_cell, chosen_cell, walls):
             walls[chosen_cell].remove(RIGHT)
             walls[current_cell].remove(LEFT)
 
+
 def get_maze(grid):
     walls = dict()
+    dead_ends = set()
     # first, have walls around all cells
     for cell in grid.keys():
         walls[cell] = [UP, DOWN, LEFT, RIGHT]
     # now, remove walls to create the maze. Algorithm from https://en.wikipedia.org/wiki/Maze_generation_algorithm
     stack = []
-    visited = set((0, 0))
+    visited = set()
+    visited.add((0, 0))
     stack.append((0, 0))
+    not_at_dead_end = True
     while len(stack) > 0:
         current_cell = stack.pop()
         neighbours = get_unvisited_neighbours(current_cell, visited, grid.keys())
         if len(neighbours) > 0:
+            not_at_dead_end = True
             stack.append(current_cell)
             index = randint(0, len(neighbours) - 1)
             chosen_neighbour = neighbours[index]
             remove_wall(current_cell, chosen_neighbour, walls)
             visited.add(chosen_neighbour)
             stack.append(chosen_neighbour)
+        elif not_at_dead_end:
+            # this is a dead end
+            dead_ends.add(current_cell)
+            not_at_dead_end = False
+    # now, find the furthest dead end and make it the end
+    highest_dist = 0
+    end_cell = (0, 0)
+    for end in dead_ends:
+        total_dist = end[0] + end[1]
+        if highest_dist < total_dist:
+            highest_dist = total_dist
+            end_cell = end
+    return walls, end_cell
 
 
 def get_xy_from_coordinates(coordinates, grid):
@@ -134,10 +172,10 @@ def get_xy_from_coordinates(coordinates, grid):
         return 0
 
 
-def handle_movement(event, buddy_rect, current_grid_coordinates, grid, barriers):
+def handle_movement(event, buddy_rect, current_grid_coordinates, grid, walls):
     if event.key == pygame.K_w:
         moved_coordinates = (current_grid_coordinates[0], current_grid_coordinates[1] - 1)
-        if moved_coordinates in barriers:
+        if UP in walls[current_grid_coordinates]:  # there is a wall above us
             return current_grid_coordinates
         xy = get_xy_from_coordinates(moved_coordinates, grid)
         if xy != 0:
@@ -145,7 +183,7 @@ def handle_movement(event, buddy_rect, current_grid_coordinates, grid, barriers)
             return moved_coordinates
     elif event.key == pygame.K_s:
         moved_coordinates = (current_grid_coordinates[0], current_grid_coordinates[1] + 1)
-        if moved_coordinates in barriers:
+        if DOWN in walls[current_grid_coordinates]:  # there is a wall below us
             return current_grid_coordinates
         xy = get_xy_from_coordinates(moved_coordinates, grid)
         if xy != 0:
@@ -153,7 +191,7 @@ def handle_movement(event, buddy_rect, current_grid_coordinates, grid, barriers)
             return moved_coordinates
     elif event.key == pygame.K_a:
         moved_coordinates = (current_grid_coordinates[0] - 1, current_grid_coordinates[1])
-        if moved_coordinates in barriers:
+        if LEFT in walls[current_grid_coordinates]:  # there is a wall to the left of us
             return current_grid_coordinates
         xy = get_xy_from_coordinates(moved_coordinates, grid)
         if xy != 0:
@@ -161,7 +199,7 @@ def handle_movement(event, buddy_rect, current_grid_coordinates, grid, barriers)
             return moved_coordinates
     elif event.key == pygame.K_d:
         moved_coordinates = (current_grid_coordinates[0] + 1, current_grid_coordinates[1])
-        if moved_coordinates in barriers:
+        if RIGHT in walls[current_grid_coordinates]:  # there is a wall to the right of us
             return current_grid_coordinates
         xy = get_xy_from_coordinates(moved_coordinates, grid)
         if xy != 0:
@@ -179,8 +217,9 @@ def game():
     location_grid = generate_coordinates()
     buddy_rect = pygame.Rect(location_grid[(0, 0)], (BUDDY_WIDTH, BUDDY_HEIGHT))
     current_grid_coordinates = (0, 0)
-    #barriers = []
-    barriers = []
+    # barriers = []
+    walls, end = get_maze(location_grid)
+    #print('Maze: ' + str(walls))
     while run:
         clock.tick(FPS)
         for event in pygame.event.get():
@@ -190,9 +229,9 @@ def game():
                 pygame.quit()
             if event.type == pygame.KEYDOWN:
                 current_grid_coordinates = handle_movement(event, buddy_rect, current_grid_coordinates, location_grid,
-                                                           barriers)
+                                                           walls)
 
-        draw_window(frames_string, buddy_rect, location_grid, barriers)
+        draw_window(frames_string, buddy_rect, location_grid, walls, end)
 
         frames += 1
         current_time_ms = pygame.time.get_ticks() % 1000
