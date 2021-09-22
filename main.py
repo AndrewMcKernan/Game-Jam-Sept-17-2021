@@ -104,9 +104,15 @@ def game():
     frames_string = ''
     location_grid = generate_coordinates()
     buddy_rect = pygame.Rect(location_grid[(GRID_WIDTH // 2, GRID_HEIGHT // 2)], (BUDDY_WIDTH, BUDDY_HEIGHT))
-    current_grid_coordinates = (GRID_WIDTH // 2, GRID_HEIGHT // 2)
-    walls, end = get_maze(location_grid)
+    current_grid_coordinates = STARTING_COORDINATES
+    mazes = dict()
+    for i in range(NUMBER_OF_MAZES):
+        mazes[i] = get_maze(location_grid)
+    # walls, end = get_maze(location_grid)
+    current_maze_index = 0
+    current_maze = mazes[current_maze_index]
     completed_maze = False
+    time_completed_maze = 0
     while run:
         clock.tick(FPS)
         for event in pygame.event.get():
@@ -117,11 +123,24 @@ def game():
             if event.type == pygame.KEYDOWN:
                 if not completed_maze:
                     current_grid_coordinates = handle_movement(event, buddy_rect, current_grid_coordinates,
-                                                               location_grid, walls)
-                if current_grid_coordinates == end:
+                                                               location_grid, current_maze[0])
+                if current_grid_coordinates == current_maze[1]:
                     completed_maze = True
+                    time_completed_maze = pygame.time.get_ticks()
 
-        draw_window(frames_string, buddy_rect, location_grid, walls, end, completed_maze)
+        draw_window(frames_string, buddy_rect, location_grid, current_maze[0], current_maze[1], completed_maze)
+
+        if completed_maze and time_completed_maze + 3000 < pygame.time.get_ticks() and current_maze_index < 6:
+            # move them to the next maze after 3 seconds
+            completed_maze = False
+            current_maze_index += 1
+            current_maze = mazes[current_maze_index]
+            current_grid_coordinates = STARTING_COORDINATES
+            xy = get_xy_from_coordinates(current_grid_coordinates, location_grid)
+            buddy_rect.x = xy[0]
+            buddy_rect.y = xy[1]
+
+
 
         frames += 1
         current_time_ms = pygame.time.get_ticks() % 1000

@@ -11,7 +11,7 @@ def get_maze(grid):
     # now, remove walls to create the maze. Algorithm from https://en.wikipedia.org/wiki/Maze_generation_algorithm
     stack = []
     visited = set()
-    starting_cell = (GRID_WIDTH // 2, GRID_HEIGHT // 2)
+    starting_cell = STARTING_COORDINATES
     visited.add(starting_cell)
     stack.append(starting_cell)
     not_at_dead_end = True
