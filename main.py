@@ -23,6 +23,10 @@ TEXT_FONT = pygame.font.SysFont('lucidaconsole', 40)
 CELL_FONT = pygame.font.SysFont('lucidaconsole', 10)
 
 
+def get_seconds_since_maze_start(start_time):
+    return pygame.time.get_ticks() // 1000 - start_time // 1000
+
+
 def draw_window(fps_string, buddy_rect, grid, walls, end, completed_maze, game_completion_string, start_time):
     pygame.draw.rect(WIN, BLACK, BACKGROUND)
     end_rect = pygame.Rect(get_xy_from_coordinates(end, grid), (WALL_WIDTH, WALL_HEIGHT))
@@ -53,7 +57,7 @@ def draw_window(fps_string, buddy_rect, grid, walls, end, completed_maze, game_c
     fps_text = TEXT_FONT.render(fps_string, True, WHITE)
     WIN.blit(fps_text, (10, 10))
 
-    timer_text = TEXT_FONT.render(str(SECONDS_PER_MAZE - (pygame.time.get_ticks() // 1000 - start_time // 1000)), True, WHITE)
+    timer_text = TEXT_FONT.render(str(SECONDS_PER_MAZE - get_seconds_since_maze_start(start_time)), True, WHITE)
     WIN.blit(timer_text, (WIDTH - timer_text.get_width() - 10, HEIGHT - timer_text.get_height() - 10))
 
     if completed_maze and game_completion_string == '':
@@ -150,6 +154,16 @@ def game():
             buddy_rect.x = xy[0]
             buddy_rect.y = xy[1]
             start_time = pygame.time.get_ticks()
+
+        if get_seconds_since_maze_start(start_time) > SECONDS_PER_MAZE:
+            # they ran out of time. They need to be reset.
+            # TODO: play an animation of time increasing and restarting
+            current_grid_coordinates = STARTING_COORDINATES
+            xy = get_xy_from_coordinates(current_grid_coordinates, location_grid)
+            buddy_rect.x = xy[0]
+            buddy_rect.y = xy[1]
+            start_time = pygame.time.get_ticks()
+            pass
 
         if completed_maze and current_maze_index == 6:
             # completed game
