@@ -23,7 +23,7 @@ TEXT_FONT = pygame.font.SysFont('lucidaconsole', 40)
 CELL_FONT = pygame.font.SysFont('lucidaconsole', 10)
 
 
-def draw_window(fps_string, buddy_rect, grid, walls, end, completed_maze):
+def draw_window(fps_string, buddy_rect, grid, walls, end, completed_maze, game_completion_string, start_time):
     pygame.draw.rect(WIN, BLACK, BACKGROUND)
     end_rect = pygame.Rect(get_xy_from_coordinates(end, grid), (WALL_WIDTH, WALL_HEIGHT))
     pygame.draw.rect(WIN, GREEN, end_rect)
@@ -53,9 +53,16 @@ def draw_window(fps_string, buddy_rect, grid, walls, end, completed_maze):
     fps_text = TEXT_FONT.render(fps_string, True, WHITE)
     WIN.blit(fps_text, (10, 10))
 
-    if completed_maze:
+    timer_text = TEXT_FONT.render(str(SECONDS_PER_MAZE - (pygame.time.get_ticks() // 1000 - start_time // 1000)), True, WHITE)
+    WIN.blit(timer_text, (WIDTH - timer_text.get_width() - 10, HEIGHT - timer_text.get_height() - 10))
+
+    if completed_maze and game_completion_string == '':
         winner_text = TEXT_FONT.render("YOU DID IT YAY!!", True, GREEN)
         WIN.blit(winner_text, (WIDTH // 2 - winner_text.get_width() // 2, HEIGHT // 2 - winner_text.get_height() // 2))
+
+    if game_completion_string != '':
+        complete_text = TEXT_FONT.render(game_completion_string, True, GREEN)
+        WIN.blit(complete_text, (WIDTH // 2 - complete_text.get_width() // 2, HEIGHT // 2 - complete_text.get_height() // 2))
 
     pygame.display.update()
 
@@ -106,6 +113,7 @@ def game():
     buddy_rect = pygame.Rect(location_grid[(GRID_WIDTH // 2, GRID_HEIGHT // 2)], (BUDDY_WIDTH, BUDDY_HEIGHT))
     current_grid_coordinates = STARTING_COORDINATES
     mazes = dict()
+    start_time = pygame.time.get_ticks()
     for i in range(NUMBER_OF_MAZES):
         mazes[i] = get_maze(location_grid)
     # walls, end = get_maze(location_grid)
@@ -113,6 +121,7 @@ def game():
     current_maze = mazes[current_maze_index]
     completed_maze = False
     time_completed_maze = 0
+    game_completion_string = ''
     while run:
         clock.tick(FPS)
         for event in pygame.event.get():
@@ -128,7 +137,8 @@ def game():
                     completed_maze = True
                     time_completed_maze = pygame.time.get_ticks()
 
-        draw_window(frames_string, buddy_rect, location_grid, current_maze[0], current_maze[1], completed_maze)
+        draw_window(frames_string, buddy_rect, location_grid, current_maze[0], current_maze[1], completed_maze,
+                    game_completion_string, start_time)
 
         if completed_maze and time_completed_maze + 3000 < pygame.time.get_ticks() and current_maze_index < 6:
             # move them to the next maze after 3 seconds
@@ -139,8 +149,13 @@ def game():
             xy = get_xy_from_coordinates(current_grid_coordinates, location_grid)
             buddy_rect.x = xy[0]
             buddy_rect.y = xy[1]
+            start_time = pygame.time.get_ticks()
 
-
+        if completed_maze and current_maze_index == 6:
+            # completed game
+            game_completion_string = "CONGRATULATIONS!\n"
+            game_completion_string += "Time: " + str((pygame.time.get_ticks() - start_time) // 1000)
+            current_maze_index += 1
 
         frames += 1
         current_time_ms = pygame.time.get_ticks() % 1000

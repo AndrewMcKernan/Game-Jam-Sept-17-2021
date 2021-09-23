@@ -4,7 +4,7 @@ UP, DOWN, LEFT, RIGHT = 0, 1, 2, 3  # directional codes for walls
 
 NUMBER_OF_MAZES = 7
 
-GRID_WIDTH, GRID_HEIGHT = 11, 11
+GRID_WIDTH, GRID_HEIGHT = 16, 16
 BUDDY_WIDTH, BUDDY_HEIGHT = WIDTH // GRID_WIDTH - WIDTH // GRID_WIDTH // 9, HEIGHT // GRID_HEIGHT - HEIGHT // GRID_HEIGHT // 9
 
 WALL_WIDTH = WIDTH // GRID_WIDTH
@@ -22,3 +22,4 @@ IDK = (120, 240, 90)
 
 FPS = 60  # more needs to be done here when frames are dropped - at this point, it will simply slow down the game.
 
+SECONDS_PER_MAZE = 17
