@@ -81,10 +81,6 @@ def draw_window(fps_string, buddy_rect, grid, walls, end, completed_maze, game_c
     for key in key_to_remove:
         del text_to_show[key]
 
-    # if completed_maze and game_completion_string == '':
-    #    winner_text = TEXT_FONT.render("YOU DID IT YAY!!", True, GREEN)
-    #    WIN.blit(winner_text, (WIDTH // 2 - winner_text.get_width() // 2, HEIGHT // 2 - winner_text.get_height() // 2))
-
     if game_completion_string != '':
         complete_text = TEXT_FONT.render(game_completion_string, True, GREEN)
         WIN.blit(complete_text,
