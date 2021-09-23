@@ -4,7 +4,6 @@ from constants import *
 
 def get_maze(grid):
     walls = dict()
-    #dead_ends = dict()
     # first, have walls around all cells
     for cell in grid.keys():
         walls[cell] = [UP, DOWN, LEFT, RIGHT]
@@ -32,15 +31,12 @@ def get_maze(grid):
             stack.append(chosen_neighbour)
         elif not_at_dead_end:
             # this is a dead end
-            #dead_ends[current_path] = current_cell
             not_at_dead_end = False
             current_path += 1
             paths[current_path] = []
     # now, find the furthest dead end and make it the end
     highest_dist = 0
     end_cell = (0, 0)
-    print('paths: ' + str(paths))
-    #print('dead ends: ' + str(dead_ends))
     for path in paths:
         if highest_dist < len(paths[path]):
             highest_dist = len(paths[path])
