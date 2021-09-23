@@ -59,11 +59,13 @@ def draw_window(fps_string, buddy_rect, grid, walls, end, completed_maze, game_c
     WIN.blit(fps_text, (10, 10))
 
     if not completed_maze:
-        timer_text = TEXT_FONT.render("Time: " + str(allowed_time - get_seconds_since_maze_start(start_time)), True, WHITE)
+        timer_text = TEXT_FONT.render("Time: " + str(allowed_time - get_seconds_since_maze_start(start_time)), True,
+                                      WHITE)
         WIN.blit(timer_text, (WIDTH - timer_text.get_width() - 10, HEIGHT - timer_text.get_height() - 10))
 
-    lives_text = TEXT_FONT.render("Lives: " + str(lives_remaining), True, WHITE)
-    WIN.blit(lives_text, (WIDTH - lives_text.get_width() - 10, 10))
+    if lives_remaining > 0:
+        lives_text = TEXT_FONT.render("Lives: " + str(lives_remaining), True, WHITE)
+        WIN.blit(lives_text, (WIDTH - lives_text.get_width() - 10, 10))
 
     key_to_remove = []
     for time_tuple in text_to_show:
@@ -79,13 +81,14 @@ def draw_window(fps_string, buddy_rect, grid, walls, end, completed_maze, game_c
     for key in key_to_remove:
         del text_to_show[key]
 
-    if completed_maze and game_completion_string == '':
-        winner_text = TEXT_FONT.render("YOU DID IT YAY!!", True, GREEN)
-        WIN.blit(winner_text, (WIDTH // 2 - winner_text.get_width() // 2, HEIGHT // 2 - winner_text.get_height() // 2))
+    # if completed_maze and game_completion_string == '':
+    #    winner_text = TEXT_FONT.render("YOU DID IT YAY!!", True, GREEN)
+    #    WIN.blit(winner_text, (WIDTH // 2 - winner_text.get_width() // 2, HEIGHT // 2 - winner_text.get_height() // 2))
 
     if game_completion_string != '':
         complete_text = TEXT_FONT.render(game_completion_string, True, GREEN)
-        WIN.blit(complete_text, (WIDTH // 2 - complete_text.get_width() // 2, HEIGHT // 2 - complete_text.get_height() // 2))
+        WIN.blit(complete_text,
+                 (WIDTH // 2 - complete_text.get_width() // 2, HEIGHT // 2 - complete_text.get_height() // 2))
 
     pygame.display.update()
 
@@ -134,6 +137,7 @@ def handle_movement(event, buddy_rect, current_grid_coordinates, grid, walls, te
 
 
 def game():
+    restart = False
     clock = pygame.time.Clock()
     run = True
     frames = 0
@@ -156,8 +160,11 @@ def game():
     text_to_show = dict()  # structured like { (TIME_TO_START_SHOWING, TIME_TO_STOP_SHOWING):(COLOR, 'text')) }
     game_completion_string = ''
     allowed_time = SECONDS_PER_MAZE
-    while run:
+    while run or len(text_to_show) > 0:
         clock.tick(FPS)
+        if len(text_to_show) > 0:
+            # pause the timer by making the start time now until we have shown all our text
+            start_time = pygame.time.get_ticks()
         for event in pygame.event.get():
             # handle events
             if event.type == pygame.QUIT:
@@ -170,6 +177,8 @@ def game():
                 if current_grid_coordinates == current_maze[1]:
                     completed_maze = True
                     time_completed_maze = pygame.time.get_ticks()
+                    right_now = pygame.time.get_ticks()
+                    add_item_to_text_to_show(text_to_show, 'Maze Complete!', GREEN, right_now, right_now + 3000)
 
         draw_window(frames_string, buddy_rect, location_grid, current_maze[0], current_maze[1], completed_maze,
                     game_completion_string, start_time, remaining_lives, allowed_time, text_to_show)
@@ -186,24 +195,42 @@ def game():
             buddy_rect.y = xy[1]
             start_time = pygame.time.get_ticks()
             allowed_time = SECONDS_PER_MAZE
-            # TODO: show the new maze for 3 seconds, along with a countdown, then resume
             right_now = pygame.time.get_ticks()
             add_item_to_text_to_show(text_to_show, 'New Maze!', WHITE, right_now, right_now + 1000)
             add_item_to_text_to_show(text_to_show, '3', WHITE, right_now + 1000, right_now + 2000)
             add_item_to_text_to_show(text_to_show, '2', WHITE, right_now + 2000, right_now + 3000)
             add_item_to_text_to_show(text_to_show, '1', WHITE, right_now + 3000, right_now + 4000)
 
-
         if get_seconds_since_maze_start(start_time) > allowed_time:
             # they ran out of time. They need to be reset.
-            # TODO: show an indication that they have failed (text, timer increase, life decrease, etc)
-            current_grid_coordinates = STARTING_COORDINATES
-            xy = get_xy_from_coordinates(current_grid_coordinates, location_grid)
-            buddy_rect.x = xy[0]
-            buddy_rect.y = xy[1]
-            start_time = pygame.time.get_ticks()
+            right_now = pygame.time.get_ticks()
+            add_item_to_text_to_show(text_to_show, 'Time Up!', WHITE, right_now, right_now + 2000)
+            timer_change_string = 'Time Increase - ' + str(allowed_time) + '->' + str(allowed_time + 7)
+            add_item_to_text_to_show(text_to_show, timer_change_string, WHITE, right_now + 2000, right_now + 2500)
+            add_item_to_text_to_show(text_to_show, '', WHITE, right_now + 2500, right_now + 3000)
+            add_item_to_text_to_show(text_to_show, timer_change_string, WHITE, right_now + 3000, right_now + 3500)
+            add_item_to_text_to_show(text_to_show, '', WHITE, right_now + 3500, right_now + 4000)
+            add_item_to_text_to_show(text_to_show, timer_change_string, WHITE, right_now + 4000, right_now + 4500)
+            add_item_to_text_to_show(text_to_show, 'Lives: ' + str(remaining_lives), WHITE, right_now + 4500,
+                                     right_now + 5500)
             remaining_lives -= 1
-            allowed_time += 7
+            if remaining_lives < 0:
+                run = False
+                restart = True
+                add_item_to_text_to_show(text_to_show, 'Game Over! Restarting game...', WHITE, right_now + 5500,
+                                         right_now + 8500)
+            else:
+                add_item_to_text_to_show(text_to_show, 'Lives: ' + str(remaining_lives), WHITE, right_now + 5500,
+                                         right_now + 6500)
+                add_item_to_text_to_show(text_to_show, '3', WHITE, right_now + 6500, right_now + 7500)
+                add_item_to_text_to_show(text_to_show, '2', WHITE, right_now + 7500, right_now + 8500)
+                add_item_to_text_to_show(text_to_show, '1', WHITE, right_now + 8500, right_now + 9500)
+                current_grid_coordinates = STARTING_COORDINATES
+                xy = get_xy_from_coordinates(current_grid_coordinates, location_grid)
+                buddy_rect.x = xy[0]
+                buddy_rect.y = xy[1]
+                start_time = pygame.time.get_ticks()
+                allowed_time += 7
 
         # if they completed the final maze
         if completed_maze and current_maze_index == 6:
@@ -218,6 +245,8 @@ def game():
             frames_string = repr(frames)
             frames = 0
         time_ms = current_time_ms
+    if restart:
+        game()
 
 
 # Press the green button in the gutter to run the script.
