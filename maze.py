@@ -17,6 +17,7 @@ def get_maze(grid):
     current_path = 0
     paths = dict()
     paths[current_path] = []
+    dead_ends = []
     while len(stack) > 0:
         current_cell = stack.pop()
         paths[current_path].append(current_cell)
@@ -34,16 +35,17 @@ def get_maze(grid):
             not_at_dead_end = False
             current_path += 1
             paths[current_path] = []
+            dead_ends.append(current_cell)
     # now, find the furthest dead end and make it the end
     highest_dist = 0
-    end_cell = (0, 0)
-    for path in paths:
-        if highest_dist < len(paths[path]):
-            highest_dist = len(paths[path])
-            if paths[path][-1] == STARTING_COORDINATES:
-                end_cell = paths[path][0]
-            else:
-                end_cell = paths[path][-1]
+    end_cell = dead_ends[randint(0, len(dead_ends) - 1)]
+    #for path in paths:
+    #    if highest_dist < len(paths[path]):
+    #        highest_dist = len(paths[path])
+    #        if paths[path][-1] == STARTING_COORDINATES:
+    #            end_cell = paths[path][0]
+    #        else:
+    #            end_cell = paths[path][-1]
     return walls, end_cell
 
 
