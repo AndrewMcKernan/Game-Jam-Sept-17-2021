@@ -35,8 +35,6 @@ def get_seconds_since_maze_start(start_time):
 def draw_window(fps_string, buddy_rect, grid, zoomed_grid, walls, end, completed_maze, start_time, lives_remaining, allowed_time,
                 text_to_show, text_needing_acknowledgement, zoomed):
     pygame.draw.rect(WIN, BLACK, BACKGROUND)
-    end_rect = pygame.Rect(get_xy_from_coordinates(end, grid), (WALL_WIDTH, WALL_HEIGHT))
-    pygame.draw.rect(WIN, GREEN, end_rect)
 
     if not zoomed:
         # draw walls
