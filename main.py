@@ -10,12 +10,17 @@ pygame.display.set_caption("Beginner Jam - Sept 17, 2021")
 
 WIN = pygame.display.set_mode((WIDTH, HEIGHT))
 
+ZOOMED_MAZE = pygame.surface.Surface((ZOOMED_MAZE_WIDTH, ZOOMED_MAZE_HEIGHT))
+camera = pygame.Rect((ZOOMED_MAZE_WIDTH // 2 - WIDTH // 2, ZOOMED_MAZE_HEIGHT // 2 - HEIGHT // 2), (WIDTH, HEIGHT))
+
 BACKGROUND = pygame.Rect(0, 0, WIDTH, HEIGHT)
+ZOOMED_BACKGROUND = pygame.Rect(0, 0, ZOOMED_MAZE_WIDTH, ZOOMED_MAZE_HEIGHT)
 
 BUDDY_IMAGE = pygame.image.load(os.path.join('assets', 'buddy.png')).convert()
 BARRIER_IMAGE = pygame.image.load(os.path.join('assets', 'barrier.png')).convert()
 
 BUDDY = pygame.transform.scale(BUDDY_IMAGE, (BUDDY_WIDTH, BUDDY_HEIGHT))
+ZOOMED_BUDDY = pygame.transform.scale(BUDDY_IMAGE, (ZOOMED_BUDDY_WIDTH, ZOOMED_BUDDY_HEIGHT))
 
 BARRIER = pygame.transform.scale(BARRIER_IMAGE, (BUDDY_WIDTH, BUDDY_HEIGHT))
 
@@ -27,34 +32,69 @@ def get_seconds_since_maze_start(start_time):
     return pygame.time.get_ticks() // 1000 - start_time // 1000
 
 
-def draw_window(fps_string, buddy_rect, grid, walls, end, completed_maze, game_completion_string, start_time,
-                lives_remaining, allowed_time, text_to_show, text_needing_acknowledgement):
+def draw_window(fps_string, buddy_rect, grid, zoomed_grid, walls, end, completed_maze, start_time, lives_remaining, allowed_time,
+                text_to_show, text_needing_acknowledgement, zoomed):
     pygame.draw.rect(WIN, BLACK, BACKGROUND)
     end_rect = pygame.Rect(get_xy_from_coordinates(end, grid), (WALL_WIDTH, WALL_HEIGHT))
     pygame.draw.rect(WIN, GREEN, end_rect)
 
-    # draw walls
-    for cell in walls:
-        for wall in walls[cell]:
-            if wall == UP:
-                line = pygame.Rect(get_xy_from_coordinates(cell, grid), (WALL_WIDTH, 1))
-                pygame.draw.rect(WIN, WHITE, line)
-            if wall == DOWN:
-                coords = get_xy_from_coordinates(cell, grid)
-                coords = (coords[0], coords[1] + WALL_HEIGHT)
-                line = pygame.Rect(coords, (WALL_WIDTH, 1))
-                pygame.draw.rect(WIN, WHITE, line)
-            if wall == LEFT:
-                line = pygame.Rect(get_xy_from_coordinates(cell, grid), (1, WALL_HEIGHT))
-                pygame.draw.rect(WIN, RED, line)
-            if wall == RIGHT:
-                coords = get_xy_from_coordinates(cell, grid)
-                coords = (coords[0] + WALL_WIDTH, coords[1])
-                line = pygame.Rect(coords, (1, WALL_HEIGHT))
-                pygame.draw.rect(WIN, RED, line)
+    if not zoomed:
+        # draw walls
+        pygame.draw.rect(WIN, BLACK, BACKGROUND)
+        end_rect = pygame.Rect(get_xy_from_coordinates(end, grid), (WALL_WIDTH, WALL_HEIGHT))
+        pygame.draw.rect(WIN, GREEN, end_rect)
+        for cell in walls:
+            for wall in walls[cell]:
+                if wall == UP:
+                    line = pygame.Rect(get_xy_from_coordinates(cell, grid), (WALL_WIDTH, 1))
+                    pygame.draw.rect(WIN, WHITE, line)
+                if wall == DOWN:
+                    coords = get_xy_from_coordinates(cell, grid)
+                    coords = (coords[0], coords[1] + WALL_HEIGHT)
+                    line = pygame.Rect(coords, (WALL_WIDTH, 1))
+                    pygame.draw.rect(WIN, WHITE, line)
+                if wall == LEFT:
+                    line = pygame.Rect(get_xy_from_coordinates(cell, grid), (1, WALL_HEIGHT))
+                    pygame.draw.rect(WIN, RED, line)
+                if wall == RIGHT:
+                    coords = get_xy_from_coordinates(cell, grid)
+                    coords = (coords[0] + WALL_WIDTH, coords[1])
+                    line = pygame.Rect(coords, (1, WALL_HEIGHT))
+                    pygame.draw.rect(WIN, RED, line)
 
-    WIN.blit(BUDDY, (buddy_rect.x + WIDTH // GRID_WIDTH // 18, buddy_rect.y + HEIGHT // GRID_HEIGHT // 18))
+        # draw character
+        WIN.blit(BUDDY, (buddy_rect.x + WIDTH // GRID_WIDTH // 18, buddy_rect.y + HEIGHT // GRID_HEIGHT // 18))
+    else:
+        pygame.draw.rect(ZOOMED_MAZE, BLACK, ZOOMED_BACKGROUND)
+        end_rect = pygame.Rect(get_xy_from_coordinates(end, zoomed_grid), (ZOOMED_WALL_WIDTH, ZOOMED_WALL_HEIGHT))
+        pygame.draw.rect(ZOOMED_MAZE, GREEN, end_rect)
+        # draw walls
+        for cell in walls:
+            for wall in walls[cell]:
+                if wall == UP:
+                    line = pygame.Rect(get_xy_from_coordinates(cell, zoomed_grid), (ZOOMED_WALL_WIDTH, 1))
+                    pygame.draw.rect(ZOOMED_MAZE, WHITE, line)
+                if wall == DOWN:
+                    coords = get_xy_from_coordinates(cell, zoomed_grid)
+                    coords = (coords[0], coords[1] + ZOOMED_WALL_HEIGHT)
+                    line = pygame.Rect(coords, (ZOOMED_WALL_WIDTH, 1))
+                    pygame.draw.rect(ZOOMED_MAZE, WHITE, line)
+                if wall == LEFT:
+                    line = pygame.Rect(get_xy_from_coordinates(cell, zoomed_grid), (1, ZOOMED_WALL_HEIGHT))
+                    pygame.draw.rect(ZOOMED_MAZE, RED, line)
+                if wall == RIGHT:
+                    coords = get_xy_from_coordinates(cell, zoomed_grid)
+                    coords = (coords[0] + ZOOMED_WALL_WIDTH, coords[1])
+                    line = pygame.Rect(coords, (1, ZOOMED_WALL_HEIGHT))
+                    pygame.draw.rect(ZOOMED_MAZE, RED, line)
 
+        # draw character
+        ZOOMED_MAZE.blit(ZOOMED_BUDDY, (buddy_rect.x + ZOOMED_MAZE_WIDTH // GRID_WIDTH // 18, buddy_rect.y + ZOOMED_MAZE_HEIGHT // GRID_HEIGHT // 18))
+        camera.x = buddy_rect.x + ZOOMED_BUDDY_WIDTH // 2 - WIDTH // 2
+        camera.y = buddy_rect.y + ZOOMED_BUDDY_HEIGHT // 2 - HEIGHT // 2
+        WIN.blit(ZOOMED_MAZE, (0, 0), camera)
+
+    # draw text
     fps_text = TEXT_FONT.render(fps_string, True, WHITE)
     WIN.blit(fps_text, (10, 10))
 
@@ -97,7 +137,7 @@ def add_item_to_text_needing_acknowledgement(text_needing_acknowledgement, text,
     text_needing_acknowledgement.append((colour, text))
 
 
-def handle_movement(event, buddy_rect, current_grid_coordinates, grid, walls, text_to_show):
+def handle_movement(event, buddy_rect, current_grid_coordinates, grid, zoomed_grid, walls, text_to_show, zoomed):
     if len(text_to_show) > 0:
         # do not move while text is being displayed
         return current_grid_coordinates
@@ -105,34 +145,59 @@ def handle_movement(event, buddy_rect, current_grid_coordinates, grid, walls, te
         moved_coordinates = (current_grid_coordinates[0], current_grid_coordinates[1] - 1)
         if UP in walls[current_grid_coordinates]:  # there is a wall above us
             return current_grid_coordinates
-        xy = get_xy_from_coordinates(moved_coordinates, grid)
-        if xy != 0:
-            buddy_rect.y = xy[1]
-            return moved_coordinates
+        if not zoomed:
+            xy = get_xy_from_coordinates(moved_coordinates, grid)
+            if xy != 0:
+                buddy_rect.y = xy[1]
+                return moved_coordinates
+        else:
+            xy = get_xy_from_coordinates(moved_coordinates, zoomed_grid)
+            if xy != 0:
+                buddy_rect.y = xy[1]
+                return moved_coordinates
+
     elif event.key == pygame.K_s:
         moved_coordinates = (current_grid_coordinates[0], current_grid_coordinates[1] + 1)
         if DOWN in walls[current_grid_coordinates]:  # there is a wall below us
             return current_grid_coordinates
-        xy = get_xy_from_coordinates(moved_coordinates, grid)
-        if xy != 0:
-            buddy_rect.y = xy[1]
-            return moved_coordinates
+        if not zoomed:
+            xy = get_xy_from_coordinates(moved_coordinates, grid)
+            if xy != 0:
+                buddy_rect.y = xy[1]
+                return moved_coordinates
+        else:
+            xy = get_xy_from_coordinates(moved_coordinates, zoomed_grid)
+            if xy != 0:
+                buddy_rect.y = xy[1]
+                return moved_coordinates
     elif event.key == pygame.K_a:
         moved_coordinates = (current_grid_coordinates[0] - 1, current_grid_coordinates[1])
         if LEFT in walls[current_grid_coordinates]:  # there is a wall to the left of us
             return current_grid_coordinates
-        xy = get_xy_from_coordinates(moved_coordinates, grid)
-        if xy != 0:
-            buddy_rect.x = xy[0]
-            return moved_coordinates
+        if not zoomed:
+            xy = get_xy_from_coordinates(moved_coordinates, grid)
+            if xy != 0:
+                buddy_rect.x = xy[0]
+                return moved_coordinates
+        else:
+            xy = get_xy_from_coordinates(moved_coordinates, zoomed_grid)
+            if xy != 0:
+                buddy_rect.x = xy[0]
+                return moved_coordinates
     elif event.key == pygame.K_d:
         moved_coordinates = (current_grid_coordinates[0] + 1, current_grid_coordinates[1])
         if RIGHT in walls[current_grid_coordinates]:  # there is a wall to the right of us
             return current_grid_coordinates
-        xy = get_xy_from_coordinates(moved_coordinates, grid)
-        if xy != 0:
-            buddy_rect.x = xy[0]
-            return moved_coordinates
+        if not zoomed:
+            xy = get_xy_from_coordinates(moved_coordinates, grid)
+            if xy != 0:
+                buddy_rect.x = xy[0]
+                return moved_coordinates
+        else:
+            xy = get_xy_from_coordinates(moved_coordinates, zoomed_grid)
+            if xy != 0:
+                buddy_rect.x = xy[0]
+                return moved_coordinates
     return current_grid_coordinates
 
 
@@ -140,10 +205,12 @@ def game():
     restart = False
     clock = pygame.time.Clock()
     run = True
+    zoomed = False
     frames = 0
     time_ms = 0
     frames_string = ''
     location_grid = generate_coordinates()
+    zoomed_location_grid = generate_zoomed_coordinates()
     buddy_rect = pygame.Rect(location_grid[(GRID_WIDTH // 2, GRID_HEIGHT // 2)], (BUDDY_WIDTH, BUDDY_HEIGHT))
     current_grid_coordinates = STARTING_COORDINATES
     mazes = dict()
@@ -159,19 +226,22 @@ def game():
     time_completed_maze = 0  # time in ms that the end tile was reached
     text_to_show = dict()  # structured like { (TIME_TO_START_SHOWING, TIME_TO_STOP_SHOWING):(COLOR, 'text')) }
     text_needing_acknowledgement = []  # structured like [ (COLOR, 'text')) ]
-    game_completion_string = ''
     allowed_time = SECONDS_PER_MAZE
     right_now = pygame.time.get_ticks()
     add_item_to_text_needing_acknowledgement(text_needing_acknowledgement, 'Press any button to start!', WHITE)
-    #add_item_to_text_to_show(text_to_show, 'Game Start!', WHITE, right_now, right_now + 1000)
-    #add_item_to_text_to_show(text_to_show, '3', WHITE, right_now + 1000, right_now + 2000)
-    #add_item_to_text_to_show(text_to_show, '2', WHITE, right_now + 2000, right_now + 3000)
-    #add_item_to_text_to_show(text_to_show, '1', WHITE, right_now + 3000, right_now + 4000)
     while run or len(text_to_show) > 0 or len(text_needing_acknowledgement) > 0:
         clock.tick(FPS)
         if len(text_to_show) > 0 or len(text_needing_acknowledgement):
             # pause the timer by making the start time now until we have shown all our text
             start_time = pygame.time.get_ticks()
+            # while there is text on the screen, show the whole map
+            zoomed = False
+        else:
+            # zoom in when all the text is gone
+            zoomed = True
+            xy = get_xy_from_coordinates(current_grid_coordinates, zoomed_location_grid)
+            buddy_rect.x = xy[0]
+            buddy_rect.y = xy[1]
         for event in pygame.event.get():
             # handle events
             if event.type == pygame.QUIT:
@@ -188,16 +258,17 @@ def game():
                 else:
                     if not completed_maze:
                         current_grid_coordinates = handle_movement(event, buddy_rect, current_grid_coordinates,
-                                                                   location_grid, current_maze[0], text_to_show)
+                                                                   location_grid, zoomed_location_grid, current_maze[0],
+                                                                   text_to_show, zoomed)
                     if current_grid_coordinates == current_maze[1]:
                         completed_maze = True
                         time_completed_maze = pygame.time.get_ticks()
                         right_now = pygame.time.get_ticks()
                         add_item_to_text_to_show(text_to_show, 'Maze Complete!', GREEN, right_now, right_now + 3000)
 
-        draw_window(frames_string, buddy_rect, location_grid, current_maze[0], current_maze[1], completed_maze,
-                    game_completion_string, start_time, remaining_lives, allowed_time, text_to_show,
-                    text_needing_acknowledgement)
+        draw_window(frames_string, buddy_rect, location_grid, zoomed_location_grid, current_maze[0], current_maze[1], completed_maze,
+                    start_time, remaining_lives, allowed_time, text_to_show,
+                    text_needing_acknowledgement, zoomed)
 
         # if they have completed the mze, wait for three seconds, and then move them to the next one, if there is one
         if completed_maze and time_completed_maze + 3000 < pygame.time.get_ticks() and current_maze_index < 6:
@@ -213,11 +284,6 @@ def game():
             allowed_time = SECONDS_PER_MAZE
             add_item_to_text_needing_acknowledgement(text_needing_acknowledgement,
                                                      'New Maze! Press any button to start.', WHITE)
-            #right_now = pygame.time.get_ticks()
-            #add_item_to_text_to_show(text_to_show, 'New Maze!', WHITE, right_now, right_now + 1000)
-            #add_item_to_text_to_show(text_to_show, '3', WHITE, right_now + 1000, right_now + 2000)
-            #add_item_to_text_to_show(text_to_show, '2', WHITE, right_now + 2000, right_now + 3000)
-            #add_item_to_text_to_show(text_to_show, '1', WHITE, right_now + 3000, right_now + 4000)
 
         if get_seconds_since_maze_start(start_time) > allowed_time:
             # they ran out of time. They need to be reset.

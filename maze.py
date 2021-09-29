@@ -37,15 +37,7 @@ def get_maze(grid):
             paths[current_path] = []
             dead_ends.append(current_cell)
     # now, find the furthest dead end and make it the end
-    highest_dist = 0
     end_cell = dead_ends[randint(0, len(dead_ends) - 1)]
-    #for path in paths:
-    #    if highest_dist < len(paths[path]):
-    #        highest_dist = len(paths[path])
-    #        if paths[path][-1] == STARTING_COORDINATES:
-    #            end_cell = paths[path][0]
-    #        else:
-    #            end_cell = paths[path][-1]
     return walls, end_cell
 
 
@@ -90,6 +82,12 @@ def generate_coordinates():
             grid_to_xy[(x, y)] = (x * WIDTH // GRID_WIDTH, y * HEIGHT // GRID_HEIGHT)
     return grid_to_xy
 
+def generate_zoomed_coordinates():
+    grid_to_xy = dict()
+    for x in range(GRID_WIDTH):
+        for y in range(GRID_HEIGHT):
+            grid_to_xy[(x, y)] = (x * ZOOMED_MAZE_WIDTH // GRID_WIDTH, y * ZOOMED_MAZE_HEIGHT // GRID_HEIGHT)
+    return grid_to_xy
 
 def get_unvisited_neighbours(cell, visited, allowed_cells):
     neighbours = []
