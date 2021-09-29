@@ -137,9 +137,23 @@ def add_item_to_text_needing_acknowledgement(text_needing_acknowledgement, text,
     text_needing_acknowledgement.append((colour, text))
 
 
-def handle_movement(event, buddy_rect, current_grid_coordinates, grid, zoomed_grid, walls, text_to_show, zoomed):
+def handle_animation(buddy_rect, next_buddy_xy):
+    if len(next_buddy_xy) > 0:
+        # set the xy of the buddy to the next one and get rid of it
+        buddy_rect.x = next_buddy_xy[0][0]
+        buddy_rect.y = next_buddy_xy[0][1]
+        del next_buddy_xy[0]
+
+
+def handle_movement(event, buddy_rect, current_grid_coordinates, grid, zoomed_grid, walls, text_to_show, zoomed,
+                    next_buddy_xy):
+    print(current_grid_coordinates)
+    print(next_buddy_xy)
     if len(text_to_show) > 0:
         # do not move while text is being displayed
+        return current_grid_coordinates
+    if len(next_buddy_xy) > 0:
+        # do not allow new inputs when animation not complete
         return current_grid_coordinates
     if event.key == pygame.K_w:
         moved_coordinates = (current_grid_coordinates[0], current_grid_coordinates[1] - 1)
@@ -147,13 +161,17 @@ def handle_movement(event, buddy_rect, current_grid_coordinates, grid, zoomed_gr
             return current_grid_coordinates
         if not zoomed:
             xy = get_xy_from_coordinates(moved_coordinates, grid)
+            next_buddy_xy.append((buddy_rect.x, buddy_rect.y - 2 * WALL_HEIGHT // FRAMES_PER_MOVE))
+            next_buddy_xy.append((xy[0], xy[1]))
             if xy != 0:
-                buddy_rect.y = xy[1]
+                buddy_rect.y = buddy_rect.y - GRID_HEIGHT // FRAMES_PER_MOVE
                 return moved_coordinates
         else:
             xy = get_xy_from_coordinates(moved_coordinates, zoomed_grid)
+            next_buddy_xy.append((buddy_rect.x, buddy_rect.y - 2 * ZOOMED_WALL_HEIGHT // FRAMES_PER_MOVE))
+            next_buddy_xy.append((xy[0], xy[1]))
             if xy != 0:
-                buddy_rect.y = xy[1]
+                buddy_rect.y = buddy_rect.y - ZOOMED_WALL_HEIGHT // FRAMES_PER_MOVE
                 return moved_coordinates
 
     elif event.key == pygame.K_s:
@@ -162,13 +180,17 @@ def handle_movement(event, buddy_rect, current_grid_coordinates, grid, zoomed_gr
             return current_grid_coordinates
         if not zoomed:
             xy = get_xy_from_coordinates(moved_coordinates, grid)
+            next_buddy_xy.append((buddy_rect.x, buddy_rect.y + 2 * WALL_HEIGHT // FRAMES_PER_MOVE))
+            next_buddy_xy.append((xy[0], xy[1]))
             if xy != 0:
-                buddy_rect.y = xy[1]
+                buddy_rect.y = buddy_rect.y + WALL_HEIGHT // FRAMES_PER_MOVE
                 return moved_coordinates
         else:
             xy = get_xy_from_coordinates(moved_coordinates, zoomed_grid)
+            next_buddy_xy.append((buddy_rect.x, buddy_rect.y + 2 * ZOOMED_WALL_HEIGHT // FRAMES_PER_MOVE))
+            next_buddy_xy.append((xy[0], xy[1]))
             if xy != 0:
-                buddy_rect.y = xy[1]
+                buddy_rect.y = buddy_rect.y + ZOOMED_WALL_HEIGHT // FRAMES_PER_MOVE
                 return moved_coordinates
     elif event.key == pygame.K_a:
         moved_coordinates = (current_grid_coordinates[0] - 1, current_grid_coordinates[1])
@@ -176,13 +198,17 @@ def handle_movement(event, buddy_rect, current_grid_coordinates, grid, zoomed_gr
             return current_grid_coordinates
         if not zoomed:
             xy = get_xy_from_coordinates(moved_coordinates, grid)
+            next_buddy_xy.append((buddy_rect.x - 2 * WALL_WIDTH // FRAMES_PER_MOVE, buddy_rect.y))
+            next_buddy_xy.append((xy[0], xy[1]))
             if xy != 0:
-                buddy_rect.x = xy[0]
+                buddy_rect.x = buddy_rect.x - WALL_WIDTH // FRAMES_PER_MOVE
                 return moved_coordinates
         else:
             xy = get_xy_from_coordinates(moved_coordinates, zoomed_grid)
+            next_buddy_xy.append((buddy_rect.x - 2 * ZOOMED_WALL_WIDTH // FRAMES_PER_MOVE, buddy_rect.y))
+            next_buddy_xy.append((xy[0], xy[1]))
             if xy != 0:
-                buddy_rect.x = xy[0]
+                buddy_rect.x = buddy_rect.x - ZOOMED_WALL_WIDTH // FRAMES_PER_MOVE
                 return moved_coordinates
     elif event.key == pygame.K_d:
         moved_coordinates = (current_grid_coordinates[0] + 1, current_grid_coordinates[1])
@@ -190,13 +216,17 @@ def handle_movement(event, buddy_rect, current_grid_coordinates, grid, zoomed_gr
             return current_grid_coordinates
         if not zoomed:
             xy = get_xy_from_coordinates(moved_coordinates, grid)
+            next_buddy_xy.append((buddy_rect.x + 2 * WALL_WIDTH // FRAMES_PER_MOVE, buddy_rect.y))
+            next_buddy_xy.append((xy[0], xy[1]))
             if xy != 0:
-                buddy_rect.x = xy[0]
+                buddy_rect.x = buddy_rect.x + WALL_WIDTH // FRAMES_PER_MOVE
                 return moved_coordinates
         else:
             xy = get_xy_from_coordinates(moved_coordinates, zoomed_grid)
+            next_buddy_xy.append((buddy_rect.x + 2 * ZOOMED_WALL_WIDTH // FRAMES_PER_MOVE, buddy_rect.y))
+            next_buddy_xy.append((xy[0], xy[1]))
             if xy != 0:
-                buddy_rect.x = xy[0]
+                buddy_rect.x = buddy_rect.x + ZOOMED_WALL_WIDTH // FRAMES_PER_MOVE
                 return moved_coordinates
     return current_grid_coordinates
 
@@ -217,6 +247,7 @@ def game():
     game_begin_time = pygame.time.get_ticks()  # the time that the game actually began
     start_time = pygame.time.get_ticks()  # the time that the maze we're on began
     remaining_lives = TOTAL_LIVES
+    next_buddy_xy = []
     for i in range(NUMBER_OF_MAZES):
         mazes[i] = get_maze(location_grid)
     # walls, end = get_maze(location_grid)
@@ -231,6 +262,7 @@ def game():
     add_item_to_text_needing_acknowledgement(text_needing_acknowledgement, 'Press any button to start!', WHITE)
     while run or len(text_to_show) > 0 or len(text_needing_acknowledgement) > 0:
         clock.tick(FPS)
+        handle_animation(buddy_rect, next_buddy_xy)
         if len(text_to_show) > 0 or len(text_needing_acknowledgement):
             # pause the timer by making the start time now until we have shown all our text
             start_time = pygame.time.get_ticks()
@@ -259,7 +291,7 @@ def game():
                     if not completed_maze:
                         current_grid_coordinates = handle_movement(event, buddy_rect, current_grid_coordinates,
                                                                    location_grid, zoomed_location_grid, current_maze[0],
-                                                                   text_to_show, zoomed)
+                                                                   text_to_show, zoomed, next_buddy_xy)
                     if current_grid_coordinates == current_maze[1]:
                         completed_maze = True
                         time_completed_maze = pygame.time.get_ticks()
