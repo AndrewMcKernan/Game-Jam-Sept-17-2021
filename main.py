@@ -1,8 +1,11 @@
-import os
+import os, sys
 import pygame
 from maze import *
 from constants import *
 from draw_text import drawText
+
+if getattr(sys, 'frozen', False):
+    os.chdir(sys._MEIPASS)
 
 pygame.font.init()  # for writing text to the screen
 pygame.mixer.init()  # for sound
@@ -16,6 +19,7 @@ camera = pygame.Rect((ZOOMED_MAZE_WIDTH // 2 - WIDTH // 2, ZOOMED_MAZE_HEIGHT //
 
 BACKGROUND = pygame.Rect(0, 0, WIDTH, HEIGHT)
 ZOOMED_BACKGROUND = pygame.Rect(0, 0, ZOOMED_MAZE_WIDTH, ZOOMED_MAZE_HEIGHT)
+
 
 BUDDY_IMAGE = pygame.image.load(os.path.join('assets', 'septo.png')).convert()
 BUDDY_IMAGE.set_colorkey(TRANSPARENT)
@@ -37,6 +41,8 @@ MAP_IMAGES[str([LEFT])] = pygame.image.load(os.path.join('assets', 'UDR.png')).c
 MAP_IMAGES[str([LEFT, RIGHT])] = pygame.image.load(os.path.join('assets', 'UD.png')).convert()
 MAP_IMAGES[str([RIGHT])] = pygame.image.load(os.path.join('assets', 'LUD.png')).convert()
 
+
+
 END_IMAGES = dict()
 END_IMAGES[str([UP, DOWN, LEFT])] = pygame.image.load(os.path.join('assets', 'R-END.png')).convert()
 END_IMAGES[str([UP, DOWN, RIGHT])] = pygame.image.load(os.path.join('assets', 'L-END.png')).convert()
@@ -57,6 +63,65 @@ CELL_FONT = pygame.font.SysFont('lucidaconsole', 10)
 
 def get_seconds_since_maze_start(start_time):
     return pygame.time.get_ticks() // 1000 - start_time // 1000
+
+
+def generate_surfaces(walls, grid, zoomed_grid, end):
+    map_surfaces = dict()
+    zoomed_map_surfaces = dict()
+    for cell in walls:
+        image = MAP_IMAGES[str(walls[cell])]
+        coords = get_xy_from_coordinates(cell, zoomed_grid)
+        right_cell_cords = get_xy_from_coordinates((cell[0] + 1, cell[1]), zoomed_grid)
+        width = ZOOMED_WALL_WIDTH
+        if right_cell_cords != 0:
+            width = right_cell_cords[0] - coords[0]
+        lower_cell_cords = get_xy_from_coordinates((cell[0], cell[1] + 1), zoomed_grid)
+        height = ZOOMED_WALL_HEIGHT
+        if lower_cell_cords != 0:
+            height = lower_cell_cords[1] - coords[1]
+        print((width, height))
+        tile = pygame.transform.scale(image, (width, height))
+        zoomed_map_surfaces[cell] = tile
+    end_image = END_IMAGES[str(walls[end])]
+    coords = get_xy_from_coordinates(end, zoomed_grid)
+    right_cell_cords = get_xy_from_coordinates((end[0] + 1, end[1]), zoomed_grid)
+    width = ZOOMED_WALL_WIDTH
+    if right_cell_cords != 0:
+        width = right_cell_cords[0] - coords[0]
+    lower_cell_cords = get_xy_from_coordinates((end[0], end[1] + 1), zoomed_grid)
+    height = ZOOMED_WALL_HEIGHT
+    if lower_cell_cords != 0:
+        height = lower_cell_cords[1] - coords[1]
+    tile = pygame.transform.scale(end_image, (width, height))
+    zoomed_map_surfaces[end] = tile
+
+    for cell in walls:
+        image = MAP_IMAGES[str(walls[cell])]
+        coords = get_xy_from_coordinates(cell, grid)
+        right_cell_cords = get_xy_from_coordinates((cell[0] + 1, cell[1]), grid)
+        width = WIDTH // GRID_WIDTH
+        if right_cell_cords != 0:
+            width = right_cell_cords[0] - coords[0]
+        lower_cell_cords = get_xy_from_coordinates((cell[0], cell[1] + 1), grid)
+        height = HEIGHT // GRID_HEIGHT
+        if lower_cell_cords != 0:
+            height = lower_cell_cords[1] - coords[1]
+        tile = pygame.transform.scale(image, (width, height))
+        map_surfaces[cell] = tile
+    end_image = END_IMAGES[str(walls[end])]
+    coords = get_xy_from_coordinates(end, grid)
+    right_cell_cords = get_xy_from_coordinates((end[0] + 1, end[1]), grid)
+    width = WIDTH // GRID_WIDTH
+    if right_cell_cords != 0:
+        width = right_cell_cords[0] - coords[0]
+    lower_cell_cords = get_xy_from_coordinates((end[0], end[1] + 1), grid)
+    height = HEIGHT // GRID_HEIGHT
+    if lower_cell_cords != 0:
+        height = lower_cell_cords[1] - coords[1]
+    tile = pygame.transform.scale(end_image, (width, height))
+    map_surfaces[end] = tile
+    return map_surfaces, zoomed_map_surfaces
+
 
 
 def draw_title():
@@ -90,35 +155,17 @@ def draw_title():
 
 
 def draw_window(fps_string, buddy_rect, grid, zoomed_grid, walls, end, completed_maze, start_time, lives_remaining,
-                allowed_time, text_to_show, text_needing_acknowledgement, zoomed):
+                allowed_time, text_to_show, text_needing_acknowledgement, zoomed, map_surfaces, zoomed_map_surfaces):
     pygame.draw.rect(WIN, WALL_COLOUR, BACKGROUND)
     if not zoomed:
         pygame.draw.rect(WIN, WALL_COLOUR, BACKGROUND)
         # draw walls
         for cell in walls:
-            image = MAP_IMAGES[str(walls[cell])]
             coords = get_xy_from_coordinates(cell, grid)
-            right_cell_cords = get_xy_from_coordinates((cell[0] + 1, cell[1]), grid)
-            width = WIDTH // GRID_WIDTH
-            if right_cell_cords != 0:
-                width = right_cell_cords[0] - coords[0]
-            lower_cell_cords = get_xy_from_coordinates((cell[0], cell[1] + 1), grid)
-            height = HEIGHT // GRID_HEIGHT
-            if lower_cell_cords != 0:
-                height = lower_cell_cords[1] - coords[1]
-            tile = pygame.transform.scale(image, (width, height))
+            tile = map_surfaces[cell]
             WIN.blit(tile, coords)
-        end_image = END_IMAGES[str(walls[end])]
         coords = get_xy_from_coordinates(end, grid)
-        right_cell_cords = get_xy_from_coordinates((end[0] + 1, end[1]), grid)
-        width = WIDTH // GRID_WIDTH
-        if right_cell_cords != 0:
-            width = right_cell_cords[0] - coords[0]
-        lower_cell_cords = get_xy_from_coordinates((end[0], end[1] + 1), grid)
-        height = HEIGHT // GRID_HEIGHT
-        if lower_cell_cords != 0:
-            height = lower_cell_cords[1] - coords[1]
-        tile = pygame.transform.scale(end_image, (width, height))
+        tile = map_surfaces[end]
         WIN.blit(tile, coords)
         # draw character
         WIN.blit(BUDDY, (buddy_rect.x + WIDTH // GRID_WIDTH // 18, buddy_rect.y + HEIGHT // GRID_HEIGHT // 18))
@@ -126,30 +173,11 @@ def draw_window(fps_string, buddy_rect, grid, zoomed_grid, walls, end, completed
         pygame.draw.rect(ZOOMED_MAZE, WALL_COLOUR, ZOOMED_BACKGROUND)
         # draw walls
         for cell in walls:
-            image = MAP_IMAGES[str(walls[cell])]
             coords = get_xy_from_coordinates(cell, zoomed_grid)
-            right_cell_cords = get_xy_from_coordinates((cell[0] + 1, cell[1]), zoomed_grid)
-            width = ZOOMED_WALL_WIDTH
-            if right_cell_cords != 0:
-                width = right_cell_cords[0] - coords[0]
-            lower_cell_cords = get_xy_from_coordinates((cell[0], cell[1] + 1), zoomed_grid)
-            height = ZOOMED_WALL_HEIGHT
-            if lower_cell_cords != 0:
-                height = lower_cell_cords[1] - coords[1]
-            print((width, height))
-            tile = pygame.transform.scale(image, (width, height))
+            tile = zoomed_map_surfaces[cell]
             ZOOMED_MAZE.blit(tile, coords)
-        end_image = END_IMAGES[str(walls[end])]
         coords = get_xy_from_coordinates(end, zoomed_grid)
-        right_cell_cords = get_xy_from_coordinates((end[0] + 1, end[1]), zoomed_grid)
-        width = ZOOMED_WALL_WIDTH
-        if right_cell_cords != 0:
-            width = right_cell_cords[0] - coords[0]
-        lower_cell_cords = get_xy_from_coordinates((end[0], end[1] + 1), zoomed_grid)
-        height = ZOOMED_WALL_HEIGHT
-        if lower_cell_cords != 0:
-            height = lower_cell_cords[1] - coords[1]
-        tile = pygame.transform.scale(end_image, (width, height))
+        tile = zoomed_map_surfaces[end]
         ZOOMED_MAZE.blit(tile, coords)
 
         # draw character
@@ -317,6 +345,8 @@ def handle_movement(event, buddy_rect, current_grid_coordinates, grid, zoomed_gr
 
 
 def game():
+    map_surfaces = dict()
+    zoomed_map_surfaces = dict()
     restart = False
     clock = pygame.time.Clock()
     title_mode = True
@@ -339,6 +369,7 @@ def game():
     # walls, end = get_maze(location_grid)
     current_maze_index = 0
     current_maze = mazes[current_maze_index]
+    map_surfaces, zoomed_map_surfaces = generate_surfaces(current_maze[0], location_grid, zoomed_location_grid, current_maze[1])
     completed_maze = False  # whether or not the current maze is complete
     time_completed_maze = 0  # time in ms that the end tile was reached
     text_to_show = dict()  # structured like { (TIME_TO_START_SHOWING, TIME_TO_STOP_SHOWING):(COLOR, 'text')) }
@@ -400,7 +431,7 @@ def game():
 
         draw_window(frames_string, buddy_rect, location_grid, zoomed_location_grid, current_maze[0], current_maze[1], completed_maze,
                     start_time, remaining_lives, allowed_time, text_to_show,
-                    text_needing_acknowledgement, zoomed)
+                    text_needing_acknowledgement, zoomed, map_surfaces, zoomed_map_surfaces)
 
         # if they have completed the mze, wait for three seconds, and then move them to the next one, if there is one
         if completed_maze and time_completed_maze + 3000 < pygame.time.get_ticks() and current_maze_index < 6:
