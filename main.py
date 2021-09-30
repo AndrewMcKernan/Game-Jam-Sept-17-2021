@@ -2,6 +2,7 @@ import os
 import pygame
 from maze import *
 from constants import *
+from draw_text import drawText
 
 pygame.font.init()  # for writing text to the screen
 pygame.mixer.init()  # for sound
@@ -19,12 +20,17 @@ ZOOMED_BACKGROUND = pygame.Rect(0, 0, ZOOMED_MAZE_WIDTH, ZOOMED_MAZE_HEIGHT)
 BUDDY_IMAGE = pygame.image.load(os.path.join('assets', 'buddy.png')).convert()
 BARRIER_IMAGE = pygame.image.load(os.path.join('assets', 'barrier.png')).convert()
 
+pygame.mixer.music.load(os.path.join('assets', 'Spy.mp3'))
+pygame.mixer.music.set_volume(0.1)
+pygame.mixer.music.play(-1)
+
 BUDDY = pygame.transform.scale(BUDDY_IMAGE, (BUDDY_WIDTH, BUDDY_HEIGHT))
 ZOOMED_BUDDY = pygame.transform.scale(BUDDY_IMAGE, (ZOOMED_BUDDY_WIDTH, ZOOMED_BUDDY_HEIGHT))
 
 BARRIER = pygame.transform.scale(BARRIER_IMAGE, (BUDDY_WIDTH, BUDDY_HEIGHT))
 
 TEXT_FONT = pygame.font.SysFont('lucidaconsole', 40)
+DESC_FONT = pygame.font.SysFont('lucidaconsole', 20)
 CELL_FONT = pygame.font.SysFont('lucidaconsole', 10)
 
 
@@ -32,13 +38,41 @@ def get_seconds_since_maze_start(start_time):
     return pygame.time.get_ticks() // 1000 - start_time // 1000
 
 
-def draw_window(fps_string, buddy_rect, grid, zoomed_grid, walls, end, completed_maze, start_time, lives_remaining, allowed_time,
-                text_to_show, text_needing_acknowledgement, zoomed):
+def draw_title():
     pygame.draw.rect(WIN, BLACK, BACKGROUND)
+    title_text = TEXT_FONT.render('Septopus', True, WHITE)
+    WIN.blit(title_text, (WIDTH // 2 - title_text.get_width() // 2, 30))
+    desc_1 = 'You are the septopus, an illegal government clone of the almighty octopus - with only 7 tentacles!'
+    rect_1 = pygame.Rect(0, title_text.get_height() + 55, WIDTH, HEIGHT // 7)
+    drawText(WIN, desc_1, WHITE, rect_1, DESC_FONT, True)
+    desc_2 = 'You need to escape this research facility and reclaim your life in the open ocean.'
+    rect_2 = pygame.Rect(0, title_text.get_height() + 55 + HEIGHT // 7, WIDTH, HEIGHT // 7)
+    drawText(WIN, desc_2, WHITE, rect_2, DESC_FONT, True)
+    desc_3 = 'To do so, you need to navigate 7 mazes before the automatic locks close in each maze!'
+    rect_3 = pygame.Rect(0, title_text.get_height() + 55 + 2 * HEIGHT // 7, WIDTH, HEIGHT // 7)
+    drawText(WIN, desc_3, WHITE, rect_3, DESC_FONT, True)
+    desc_4 = "If you fail, don't worry. You have the power to reset time 7 times - once per tentacle."
+    rect_4 = pygame.Rect(0, title_text.get_height() + 55 + 3 * HEIGHT // 7, WIDTH, HEIGHT // 7)
+    drawText(WIN, desc_4, WHITE, rect_4, DESC_FONT, True)
+    desc_5 = "Before you start, be sure to memorize the maze's layout as best you can. Once you start moving, your vision will be reduced!"
+    rect_5 = pygame.Rect(0, title_text.get_height() + 55 + 4 * HEIGHT // 7, WIDTH, HEIGHT // 7)
+    drawText(WIN, desc_5, WHITE, rect_5, DESC_FONT, True)
+    desc_6 = "Good luck! Press ENTER to begin."
+    rect_6 = pygame.Rect(0, title_text.get_height() + 55 + 5 * HEIGHT // 7, WIDTH, HEIGHT // 7)
+    drawText(WIN, desc_6, WHITE, rect_6, DESC_FONT, True)
 
+    desc_7 = 'Music By Nicole Marie T'
+    rect_7 = pygame.Rect(0, title_text.get_height() + 35 + 6 * HEIGHT // 7, WIDTH, HEIGHT // 7)
+    drawText(WIN, desc_7, WHITE, rect_7, DESC_FONT, True)
+
+    pygame.display.update()
+
+
+def draw_window(fps_string, buddy_rect, grid, zoomed_grid, walls, end, completed_maze, start_time, lives_remaining,
+                allowed_time, text_to_show, text_needing_acknowledgement, zoomed):
+    pygame.draw.rect(WIN, BLACK, BACKGROUND)
     if not zoomed:
         # draw walls
-        pygame.draw.rect(WIN, BLACK, BACKGROUND)
         end_rect = pygame.Rect(get_xy_from_coordinates(end, grid), (WALL_WIDTH, WALL_HEIGHT))
         pygame.draw.rect(WIN, GREEN, end_rect)
         for cell in walls:
@@ -106,9 +140,8 @@ def draw_window(fps_string, buddy_rect, grid, zoomed_grid, walls, end, completed
         WIN.blit(lives_text, (WIDTH - lives_text.get_width() - 10, 10))
 
     if len(text_needing_acknowledgement) > 0:
-        text_render = TEXT_FONT.render(text_needing_acknowledgement[0][1], True, text_needing_acknowledgement[0][0])
-        WIN.blit(text_render, (WIDTH // 2 - text_render.get_width() // 2,
-                               HEIGHT // 2 - text_render.get_height() // 2))
+        rect = pygame.Rect(WIDTH // 7, HEIGHT // 2, WIDTH - 2 * WIDTH // 7, HEIGHT // 2)
+        drawText(WIN, text_needing_acknowledgement[0][1], text_needing_acknowledgement[0][0], rect, TEXT_FONT)
 
     key_to_remove = []
     for time_tuple in text_to_show:
@@ -254,6 +287,7 @@ def handle_movement(event, buddy_rect, current_grid_coordinates, grid, zoomed_gr
 def game():
     restart = False
     clock = pygame.time.Clock()
+    title_mode = True
     run = True
     zoomed = False
     frames = 0
@@ -278,8 +312,20 @@ def game():
     text_to_show = dict()  # structured like { (TIME_TO_START_SHOWING, TIME_TO_STOP_SHOWING):(COLOR, 'text')) }
     text_needing_acknowledgement = []  # structured like [ (COLOR, 'text')) ]
     allowed_time = SECONDS_PER_MAZE
-    right_now = pygame.time.get_ticks()
-    add_item_to_text_needing_acknowledgement(text_needing_acknowledgement, 'Press any button to start!', WHITE)
+
+    while title_mode:
+        draw_title()
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                run = False
+                title_mode = False
+                pygame.quit()
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_RETURN:
+                    title_mode = False
+                    add_item_to_text_needing_acknowledgement(text_needing_acknowledgement, 'Press any button to start!',
+                                                             WHITE)
+
     while run or len(text_to_show) > 0 or len(text_needing_acknowledgement) > 0:
         clock.tick(FPS)
         handle_animation(buddy_rect, next_buddy_xy)
@@ -299,6 +345,7 @@ def game():
             if event.type == pygame.QUIT:
                 run = False
                 pygame.quit()
+                continue
             if event.type == pygame.KEYDOWN:
                 if len(text_needing_acknowledgement) > 0:
                     del text_needing_acknowledgement[0]
@@ -316,7 +363,8 @@ def game():
                         completed_maze = True
                         time_completed_maze = pygame.time.get_ticks()
                         right_now = pygame.time.get_ticks()
-                        add_item_to_text_to_show(text_to_show, 'Maze Complete!', GREEN, right_now, right_now + 3000)
+                        if current_maze_index < 6:
+                            add_item_to_text_to_show(text_to_show, 'Maze Complete!', GREEN, right_now, right_now + 3000)
 
         draw_window(frames_string, buddy_rect, location_grid, zoomed_location_grid, current_maze[0], current_maze[1], completed_maze,
                     start_time, remaining_lives, allowed_time, text_to_show,
@@ -373,7 +421,7 @@ def game():
             # completed game
             game_completion_string = "CONGRATULATIONS! "
             game_completion_string += "Time: " + str((pygame.time.get_ticks() - game_begin_time) // 1000)
-            add_item_to_text_needing_acknowledgement(game_completion_string)
+            add_item_to_text_needing_acknowledgement(text_needing_acknowledgement, game_completion_string, GREEN)
             current_maze_index += 1
             run = False
             restart = True
