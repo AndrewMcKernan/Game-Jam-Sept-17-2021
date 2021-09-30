@@ -17,8 +17,31 @@ camera = pygame.Rect((ZOOMED_MAZE_WIDTH // 2 - WIDTH // 2, ZOOMED_MAZE_HEIGHT //
 BACKGROUND = pygame.Rect(0, 0, WIDTH, HEIGHT)
 ZOOMED_BACKGROUND = pygame.Rect(0, 0, ZOOMED_MAZE_WIDTH, ZOOMED_MAZE_HEIGHT)
 
-BUDDY_IMAGE = pygame.image.load(os.path.join('assets', 'buddy.png')).convert()
-BARRIER_IMAGE = pygame.image.load(os.path.join('assets', 'barrier.png')).convert()
+BUDDY_IMAGE = pygame.image.load(os.path.join('assets', 'septo.png')).convert()
+BUDDY_IMAGE.set_colorkey(TRANSPARENT)
+
+MAP_IMAGES = dict()
+MAP_IMAGES[str([])] = pygame.image.load(os.path.join('assets', 'LRUD.png')).convert()
+MAP_IMAGES[str([UP])] = pygame.image.load(os.path.join('assets', 'LRD.png')).convert()
+MAP_IMAGES[str([UP, DOWN])] = pygame.image.load(os.path.join('assets', 'LR.png')).convert()
+MAP_IMAGES[str([UP, DOWN, LEFT])] = pygame.image.load(os.path.join('assets', 'R.png')).convert()
+MAP_IMAGES[str([UP, DOWN, RIGHT])] = pygame.image.load(os.path.join('assets', 'L.png')).convert()
+MAP_IMAGES[str([UP, LEFT])] = pygame.image.load(os.path.join('assets', 'RD.png')).convert()
+MAP_IMAGES[str([UP, LEFT, RIGHT])] = pygame.image.load(os.path.join('assets', 'D.png')).convert()
+MAP_IMAGES[str([UP, RIGHT])] = pygame.image.load(os.path.join('assets', 'LD.png')).convert()
+MAP_IMAGES[str([DOWN])] = pygame.image.load(os.path.join('assets', 'LRU.png')).convert()
+MAP_IMAGES[str([DOWN, LEFT])] = pygame.image.load(os.path.join('assets', 'UR.png')).convert()
+MAP_IMAGES[str([DOWN, LEFT, RIGHT])] = pygame.image.load(os.path.join('assets', 'U.png')).convert()
+MAP_IMAGES[str([DOWN, RIGHT])] = pygame.image.load(os.path.join('assets', 'LU.png')).convert()
+MAP_IMAGES[str([LEFT])] = pygame.image.load(os.path.join('assets', 'UDR.png')).convert()
+MAP_IMAGES[str([LEFT, RIGHT])] = pygame.image.load(os.path.join('assets', 'UD.png')).convert()
+MAP_IMAGES[str([RIGHT])] = pygame.image.load(os.path.join('assets', 'LUD.png')).convert()
+
+END_IMAGES = dict()
+END_IMAGES[str([UP, DOWN, LEFT])] = pygame.image.load(os.path.join('assets', 'R-END.png')).convert()
+END_IMAGES[str([UP, DOWN, RIGHT])] = pygame.image.load(os.path.join('assets', 'L-END.png')).convert()
+END_IMAGES[str([UP, LEFT, RIGHT])] = pygame.image.load(os.path.join('assets', 'D-END.png')).convert()
+END_IMAGES[str([DOWN, LEFT, RIGHT])] = pygame.image.load(os.path.join('assets', 'U-END.png')).convert()
 
 pygame.mixer.music.load(os.path.join('assets', 'Spy.mp3'))
 pygame.mixer.music.set_volume(0.1)
@@ -26,8 +49,6 @@ pygame.mixer.music.play(-1)
 
 BUDDY = pygame.transform.scale(BUDDY_IMAGE, (BUDDY_WIDTH, BUDDY_HEIGHT))
 ZOOMED_BUDDY = pygame.transform.scale(BUDDY_IMAGE, (ZOOMED_BUDDY_WIDTH, ZOOMED_BUDDY_HEIGHT))
-
-BARRIER = pygame.transform.scale(BARRIER_IMAGE, (BUDDY_WIDTH, BUDDY_HEIGHT))
 
 TEXT_FONT = pygame.font.SysFont('lucidaconsole', 40)
 DESC_FONT = pygame.font.SysFont('lucidaconsole', 20)
@@ -48,10 +69,10 @@ def draw_title():
     desc_2 = 'You need to escape this research facility and reclaim your life in the open ocean.'
     rect_2 = pygame.Rect(0, title_text.get_height() + 55 + HEIGHT // 7, WIDTH, HEIGHT // 7)
     drawText(WIN, desc_2, WHITE, rect_2, DESC_FONT, True)
-    desc_3 = 'To do so, you need to navigate 7 mazes before the automatic locks close in each maze!'
+    desc_3 = 'To do so, you need to navigate 7 mazes before the automatic locks close in each maze! Look for the green exit tile.'
     rect_3 = pygame.Rect(0, title_text.get_height() + 55 + 2 * HEIGHT // 7, WIDTH, HEIGHT // 7)
     drawText(WIN, desc_3, WHITE, rect_3, DESC_FONT, True)
-    desc_4 = "If you fail, don't worry. You have the power to reset time 7 times - once per tentacle."
+    desc_4 = "If you fail, don't worry. You have the power to reset time 7 times - once per tentacle. Each failure will give you a slight time bonus."
     rect_4 = pygame.Rect(0, title_text.get_height() + 55 + 3 * HEIGHT // 7, WIDTH, HEIGHT // 7)
     drawText(WIN, desc_4, WHITE, rect_4, DESC_FONT, True)
     desc_5 = "Before you start, be sure to memorize the maze's layout as best you can. Once you start moving, your vision will be reduced!"
@@ -70,55 +91,66 @@ def draw_title():
 
 def draw_window(fps_string, buddy_rect, grid, zoomed_grid, walls, end, completed_maze, start_time, lives_remaining,
                 allowed_time, text_to_show, text_needing_acknowledgement, zoomed):
-    pygame.draw.rect(WIN, BLACK, BACKGROUND)
+    pygame.draw.rect(WIN, WALL_COLOUR, BACKGROUND)
     if not zoomed:
+        pygame.draw.rect(WIN, WALL_COLOUR, BACKGROUND)
         # draw walls
-        end_rect = pygame.Rect(get_xy_from_coordinates(end, grid), (WALL_WIDTH, WALL_HEIGHT))
-        pygame.draw.rect(WIN, GREEN, end_rect)
         for cell in walls:
-            for wall in walls[cell]:
-                if wall == UP:
-                    line = pygame.Rect(get_xy_from_coordinates(cell, grid), (WALL_WIDTH, 1))
-                    pygame.draw.rect(WIN, WHITE, line)
-                if wall == DOWN:
-                    coords = get_xy_from_coordinates(cell, grid)
-                    coords = (coords[0], coords[1] + WALL_HEIGHT)
-                    line = pygame.Rect(coords, (WALL_WIDTH, 1))
-                    pygame.draw.rect(WIN, WHITE, line)
-                if wall == LEFT:
-                    line = pygame.Rect(get_xy_from_coordinates(cell, grid), (1, WALL_HEIGHT))
-                    pygame.draw.rect(WIN, RED, line)
-                if wall == RIGHT:
-                    coords = get_xy_from_coordinates(cell, grid)
-                    coords = (coords[0] + WALL_WIDTH, coords[1])
-                    line = pygame.Rect(coords, (1, WALL_HEIGHT))
-                    pygame.draw.rect(WIN, RED, line)
-
+            image = MAP_IMAGES[str(walls[cell])]
+            coords = get_xy_from_coordinates(cell, grid)
+            right_cell_cords = get_xy_from_coordinates((cell[0] + 1, cell[1]), grid)
+            width = WIDTH // GRID_WIDTH
+            if right_cell_cords != 0:
+                width = right_cell_cords[0] - coords[0]
+            lower_cell_cords = get_xy_from_coordinates((cell[0], cell[1] + 1), grid)
+            height = HEIGHT // GRID_HEIGHT
+            if lower_cell_cords != 0:
+                height = lower_cell_cords[1] - coords[1]
+            tile = pygame.transform.scale(image, (width, height))
+            WIN.blit(tile, coords)
+        end_image = END_IMAGES[str(walls[end])]
+        coords = get_xy_from_coordinates(end, grid)
+        right_cell_cords = get_xy_from_coordinates((end[0] + 1, end[1]), grid)
+        width = WIDTH // GRID_WIDTH
+        if right_cell_cords != 0:
+            width = right_cell_cords[0] - coords[0]
+        lower_cell_cords = get_xy_from_coordinates((end[0], end[1] + 1), grid)
+        height = HEIGHT // GRID_HEIGHT
+        if lower_cell_cords != 0:
+            height = lower_cell_cords[1] - coords[1]
+        tile = pygame.transform.scale(end_image, (width, height))
+        WIN.blit(tile, coords)
         # draw character
         WIN.blit(BUDDY, (buddy_rect.x + WIDTH // GRID_WIDTH // 18, buddy_rect.y + HEIGHT // GRID_HEIGHT // 18))
     else:
-        pygame.draw.rect(ZOOMED_MAZE, BLACK, ZOOMED_BACKGROUND)
-        end_rect = pygame.Rect(get_xy_from_coordinates(end, zoomed_grid), (ZOOMED_WALL_WIDTH, ZOOMED_WALL_HEIGHT))
-        pygame.draw.rect(ZOOMED_MAZE, GREEN, end_rect)
+        pygame.draw.rect(ZOOMED_MAZE, WALL_COLOUR, ZOOMED_BACKGROUND)
         # draw walls
         for cell in walls:
-            for wall in walls[cell]:
-                if wall == UP:
-                    line = pygame.Rect(get_xy_from_coordinates(cell, zoomed_grid), (ZOOMED_WALL_WIDTH, 1))
-                    pygame.draw.rect(ZOOMED_MAZE, WHITE, line)
-                if wall == DOWN:
-                    coords = get_xy_from_coordinates(cell, zoomed_grid)
-                    coords = (coords[0], coords[1] + ZOOMED_WALL_HEIGHT)
-                    line = pygame.Rect(coords, (ZOOMED_WALL_WIDTH, 1))
-                    pygame.draw.rect(ZOOMED_MAZE, WHITE, line)
-                if wall == LEFT:
-                    line = pygame.Rect(get_xy_from_coordinates(cell, zoomed_grid), (1, ZOOMED_WALL_HEIGHT))
-                    pygame.draw.rect(ZOOMED_MAZE, RED, line)
-                if wall == RIGHT:
-                    coords = get_xy_from_coordinates(cell, zoomed_grid)
-                    coords = (coords[0] + ZOOMED_WALL_WIDTH, coords[1])
-                    line = pygame.Rect(coords, (1, ZOOMED_WALL_HEIGHT))
-                    pygame.draw.rect(ZOOMED_MAZE, RED, line)
+            image = MAP_IMAGES[str(walls[cell])]
+            coords = get_xy_from_coordinates(cell, zoomed_grid)
+            right_cell_cords = get_xy_from_coordinates((cell[0] + 1, cell[1]), zoomed_grid)
+            width = ZOOMED_WALL_WIDTH
+            if right_cell_cords != 0:
+                width = right_cell_cords[0] - coords[0]
+            lower_cell_cords = get_xy_from_coordinates((cell[0], cell[1] + 1), zoomed_grid)
+            height = ZOOMED_WALL_HEIGHT
+            if lower_cell_cords != 0:
+                height = lower_cell_cords[1] - coords[1]
+            print((width, height))
+            tile = pygame.transform.scale(image, (width, height))
+            ZOOMED_MAZE.blit(tile, coords)
+        end_image = END_IMAGES[str(walls[end])]
+        coords = get_xy_from_coordinates(end, zoomed_grid)
+        right_cell_cords = get_xy_from_coordinates((end[0] + 1, end[1]), zoomed_grid)
+        width = ZOOMED_WALL_WIDTH
+        if right_cell_cords != 0:
+            width = right_cell_cords[0] - coords[0]
+        lower_cell_cords = get_xy_from_coordinates((end[0], end[1] + 1), zoomed_grid)
+        height = ZOOMED_WALL_HEIGHT
+        if lower_cell_cords != 0:
+            height = lower_cell_cords[1] - coords[1]
+        tile = pygame.transform.scale(end_image, (width, height))
+        ZOOMED_MAZE.blit(tile, coords)
 
         # draw character
         ZOOMED_MAZE.blit(ZOOMED_BUDDY, (buddy_rect.x + ZOOMED_MAZE_WIDTH // GRID_WIDTH // 18, buddy_rect.y + ZOOMED_MAZE_HEIGHT // GRID_HEIGHT // 18))

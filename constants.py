@@ -32,6 +32,8 @@ RED = (255, 0, 0)
 GREEN = (0, 255, 0)
 YELLOW = (255, 255, 0)
 IDK = (120, 240, 90)
+TRANSPARENT = (217, 34, 232)
+WALL_COLOUR = (195, 195, 195)
 
 FPS = 60  # more needs to be done here when frames are dropped - at this point, it will simply slow down the game.
 
