@@ -145,8 +145,6 @@ def handle_animation(buddy_rect, next_buddy_xy):
 
 def handle_movement(event, buddy_rect, current_grid_coordinates, grid, zoomed_grid, walls, text_to_show, zoomed,
                     next_buddy_xy):
-    print(current_grid_coordinates)
-    print(next_buddy_xy)
     if len(text_to_show) > 0:
         # do not move while text is being displayed
         return current_grid_coordinates
@@ -159,14 +157,20 @@ def handle_movement(event, buddy_rect, current_grid_coordinates, grid, zoomed_gr
             return current_grid_coordinates
         if not zoomed:
             xy = get_xy_from_coordinates(moved_coordinates, grid)
-            next_buddy_xy.append((buddy_rect.x, buddy_rect.y - 2 * WALL_HEIGHT // FRAMES_PER_MOVE))
+            frame = 2
+            while frame < FRAMES_PER_MOVE:
+                next_buddy_xy.append((buddy_rect.x, buddy_rect.y - frame * WALL_HEIGHT // FRAMES_PER_MOVE))
+                frame += 1
             next_buddy_xy.append((xy[0], xy[1]))
             if xy != 0:
                 buddy_rect.y = buddy_rect.y - GRID_HEIGHT // FRAMES_PER_MOVE
                 return moved_coordinates
         else:
             xy = get_xy_from_coordinates(moved_coordinates, zoomed_grid)
-            next_buddy_xy.append((buddy_rect.x, buddy_rect.y - 2 * ZOOMED_WALL_HEIGHT // FRAMES_PER_MOVE))
+            frame = 2
+            while frame < FRAMES_PER_MOVE:
+                next_buddy_xy.append((buddy_rect.x, buddy_rect.y - frame * ZOOMED_WALL_HEIGHT // FRAMES_PER_MOVE))
+                frame += 1
             next_buddy_xy.append((xy[0], xy[1]))
             if xy != 0:
                 buddy_rect.y = buddy_rect.y - ZOOMED_WALL_HEIGHT // FRAMES_PER_MOVE
@@ -178,14 +182,20 @@ def handle_movement(event, buddy_rect, current_grid_coordinates, grid, zoomed_gr
             return current_grid_coordinates
         if not zoomed:
             xy = get_xy_from_coordinates(moved_coordinates, grid)
-            next_buddy_xy.append((buddy_rect.x, buddy_rect.y + 2 * WALL_HEIGHT // FRAMES_PER_MOVE))
+            frame = 2
+            while frame < FRAMES_PER_MOVE:
+                next_buddy_xy.append((buddy_rect.x, buddy_rect.y + frame * WALL_HEIGHT // FRAMES_PER_MOVE))
+                frame += 1
             next_buddy_xy.append((xy[0], xy[1]))
             if xy != 0:
                 buddy_rect.y = buddy_rect.y + WALL_HEIGHT // FRAMES_PER_MOVE
                 return moved_coordinates
         else:
             xy = get_xy_from_coordinates(moved_coordinates, zoomed_grid)
-            next_buddy_xy.append((buddy_rect.x, buddy_rect.y + 2 * ZOOMED_WALL_HEIGHT // FRAMES_PER_MOVE))
+            frame = 2
+            while frame < FRAMES_PER_MOVE:
+                next_buddy_xy.append((buddy_rect.x, buddy_rect.y + frame * ZOOMED_WALL_HEIGHT // FRAMES_PER_MOVE))
+                frame += 1
             next_buddy_xy.append((xy[0], xy[1]))
             if xy != 0:
                 buddy_rect.y = buddy_rect.y + ZOOMED_WALL_HEIGHT // FRAMES_PER_MOVE
@@ -196,14 +206,20 @@ def handle_movement(event, buddy_rect, current_grid_coordinates, grid, zoomed_gr
             return current_grid_coordinates
         if not zoomed:
             xy = get_xy_from_coordinates(moved_coordinates, grid)
-            next_buddy_xy.append((buddy_rect.x - 2 * WALL_WIDTH // FRAMES_PER_MOVE, buddy_rect.y))
+            frame = 2
+            while frame < FRAMES_PER_MOVE:
+                next_buddy_xy.append((buddy_rect.x - frame * WALL_WIDTH // FRAMES_PER_MOVE, buddy_rect.y))
+                frame += 1
             next_buddy_xy.append((xy[0], xy[1]))
             if xy != 0:
                 buddy_rect.x = buddy_rect.x - WALL_WIDTH // FRAMES_PER_MOVE
                 return moved_coordinates
         else:
             xy = get_xy_from_coordinates(moved_coordinates, zoomed_grid)
-            next_buddy_xy.append((buddy_rect.x - 2 * ZOOMED_WALL_WIDTH // FRAMES_PER_MOVE, buddy_rect.y))
+            frame = 2
+            while frame < FRAMES_PER_MOVE:
+                next_buddy_xy.append((buddy_rect.x - frame * ZOOMED_WALL_WIDTH // FRAMES_PER_MOVE, buddy_rect.y))
+                frame += 1
             next_buddy_xy.append((xy[0], xy[1]))
             if xy != 0:
                 buddy_rect.x = buddy_rect.x - ZOOMED_WALL_WIDTH // FRAMES_PER_MOVE
@@ -214,14 +230,20 @@ def handle_movement(event, buddy_rect, current_grid_coordinates, grid, zoomed_gr
             return current_grid_coordinates
         if not zoomed:
             xy = get_xy_from_coordinates(moved_coordinates, grid)
-            next_buddy_xy.append((buddy_rect.x + 2 * WALL_WIDTH // FRAMES_PER_MOVE, buddy_rect.y))
+            frame = 2
+            while frame < FRAMES_PER_MOVE:
+                next_buddy_xy.append((buddy_rect.x + frame * WALL_WIDTH // FRAMES_PER_MOVE, buddy_rect.y))
+                frame += 1
             next_buddy_xy.append((xy[0], xy[1]))
             if xy != 0:
                 buddy_rect.x = buddy_rect.x + WALL_WIDTH // FRAMES_PER_MOVE
                 return moved_coordinates
         else:
             xy = get_xy_from_coordinates(moved_coordinates, zoomed_grid)
-            next_buddy_xy.append((buddy_rect.x + 2 * ZOOMED_WALL_WIDTH // FRAMES_PER_MOVE, buddy_rect.y))
+            frame = 2
+            while frame < FRAMES_PER_MOVE:
+                next_buddy_xy.append((buddy_rect.x + frame * ZOOMED_WALL_WIDTH // FRAMES_PER_MOVE, buddy_rect.y))
+                frame += 1
             next_buddy_xy.append((xy[0], xy[1]))
             if xy != 0:
                 buddy_rect.x = buddy_rect.x + ZOOMED_WALL_WIDTH // FRAMES_PER_MOVE
@@ -266,7 +288,7 @@ def game():
             start_time = pygame.time.get_ticks()
             # while there is text on the screen, show the whole map
             zoomed = False
-        else:
+        elif len(next_buddy_xy) < 1:
             # zoom in when all the text is gone
             zoomed = True
             xy = get_xy_from_coordinates(current_grid_coordinates, zoomed_location_grid)
