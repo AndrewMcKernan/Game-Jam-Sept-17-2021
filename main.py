@@ -79,7 +79,6 @@ def generate_surfaces(walls, grid, zoomed_grid, end):
         height = ZOOMED_WALL_HEIGHT
         if lower_cell_cords != 0:
             height = lower_cell_cords[1] - coords[1]
-        print((width, height))
         tile = pygame.transform.scale(image, (width, height))
         zoomed_map_surfaces[cell] = tile
     end_image = END_IMAGES[str(walls[end])]
@@ -126,7 +125,7 @@ def generate_surfaces(walls, grid, zoomed_grid, end):
 
 def draw_title():
     pygame.draw.rect(WIN, BLACK, BACKGROUND)
-    title_text = TEXT_FONT.render('Septopus', True, WHITE)
+    title_text = TEXT_FONT.render('Septopus', True, RED)
     WIN.blit(title_text, (WIDTH // 2 - title_text.get_width() // 2, 30))
     desc_1 = 'You are the septopus, an illegal government clone of the almighty octopus - with only 7 tentacles!'
     rect_1 = pygame.Rect(0, title_text.get_height() + 55, WIDTH, HEIGHT // 7)
@@ -134,13 +133,13 @@ def draw_title():
     desc_2 = 'You need to escape this research facility and reclaim your life in the open ocean.'
     rect_2 = pygame.Rect(0, title_text.get_height() + 55 + HEIGHT // 7, WIDTH, HEIGHT // 7)
     drawText(WIN, desc_2, WHITE, rect_2, DESC_FONT, True)
-    desc_3 = 'To do so, you need to navigate 7 mazes before the automatic locks close in each maze! Look for the green exit tile.'
+    desc_3 = 'To do so, you must navigate 7 mazes before the automatic locks close in each maze! Look for the GREEN exit tile. Use WASD or the Arrow Keys to move.'
     rect_3 = pygame.Rect(0, title_text.get_height() + 55 + 2 * HEIGHT // 7, WIDTH, HEIGHT // 7)
     drawText(WIN, desc_3, WHITE, rect_3, DESC_FONT, True)
-    desc_4 = "If you fail, don't worry. You have the power to reset time 7 times - once per tentacle. Each failure will give you a slight time bonus."
+    desc_4 = "If you fail, don't worry. You have the power to reset 7 times - once per tentacle. Each failure will give you a slight time bonus."
     rect_4 = pygame.Rect(0, title_text.get_height() + 55 + 3 * HEIGHT // 7, WIDTH, HEIGHT // 7)
     drawText(WIN, desc_4, WHITE, rect_4, DESC_FONT, True)
-    desc_5 = "Before you start, be sure to memorize the maze's layout as best you can. Once you start moving, your vision will be reduced!"
+    desc_5 = "Each maze will be randomly generated. Before you start, be sure to memorize the maze's layout as best you can. Once you start moving, your vision will be reduced!"
     rect_5 = pygame.Rect(0, title_text.get_height() + 55 + 4 * HEIGHT // 7, WIDTH, HEIGHT // 7)
     drawText(WIN, desc_5, WHITE, rect_5, DESC_FONT, True)
     desc_6 = "Good luck! Press ENTER to begin."
@@ -155,7 +154,8 @@ def draw_title():
 
 
 def draw_window(fps_string, buddy_rect, grid, zoomed_grid, walls, end, completed_maze, start_time, lives_remaining,
-                allowed_time, text_to_show, text_needing_acknowledgement, zoomed, map_surfaces, zoomed_map_surfaces):
+                allowed_time, text_to_show, text_needing_acknowledgement, zoomed, map_surfaces, zoomed_map_surfaces,
+                stage):
     pygame.draw.rect(WIN, WALL_COLOUR, BACKGROUND)
     if not zoomed:
         pygame.draw.rect(WIN, WALL_COLOUR, BACKGROUND)
@@ -187,16 +187,27 @@ def draw_window(fps_string, buddy_rect, grid, zoomed_grid, walls, end, completed
         WIN.blit(ZOOMED_MAZE, (0, 0), camera)
 
     # draw text
-    fps_text = TEXT_FONT.render(fps_string, True, WHITE)
-    WIN.blit(fps_text, (10, 10))
+    if stage < 8:
+        stage_text = TEXT_FONT.render('Stage: ' + str(stage), True, GREEN)
+        stage_text_shadow = TEXT_FONT.render('Stage: ' + str(stage), True, BLACK)
+    else:
+        stage_text = TEXT_FONT.render('Game Complete!', True, GREEN)
+        stage_text_shadow = TEXT_FONT.render('Game Complete!', True, BLACK)
+    WIN.blit(stage_text_shadow, (7, 7))
+    WIN.blit(stage_text, (10, 10))
 
     if not completed_maze:
         timer_text = TEXT_FONT.render("Time: " + str(allowed_time - get_seconds_since_maze_start(start_time)), True,
-                                      WHITE)
+                                      GREEN)
+        timer_text_shadow = TEXT_FONT.render("Time: " + str(allowed_time - get_seconds_since_maze_start(start_time)), True,
+                                      BLACK)
+        WIN.blit(timer_text_shadow, (WIDTH - timer_text.get_width() - 13, HEIGHT - timer_text.get_height() - 13))
         WIN.blit(timer_text, (WIDTH - timer_text.get_width() - 10, HEIGHT - timer_text.get_height() - 10))
 
     if lives_remaining > 0:
-        lives_text = TEXT_FONT.render("Lives: " + str(lives_remaining), True, WHITE)
+        lives_text = TEXT_FONT.render("Lives: " + str(lives_remaining), True, GREEN)
+        lives_text_shadow = TEXT_FONT.render("Lives: " + str(lives_remaining), True, BLACK)
+        WIN.blit(lives_text_shadow, (WIDTH - lives_text.get_width() - 13, 7))
         WIN.blit(lives_text, (WIDTH - lives_text.get_width() - 10, 10))
 
     if len(text_needing_acknowledgement) > 0:
@@ -209,6 +220,9 @@ def draw_window(fps_string, buddy_rect, grid, zoomed_grid, walls, end, completed
         if time_tuple[0] <= right_now <= time_tuple[1]:
             # display the text
             text_render = TEXT_FONT.render(text_to_show[time_tuple][1], True, text_to_show[time_tuple][0])
+            text_render_shadow = TEXT_FONT.render(text_to_show[time_tuple][1], True, BLACK)
+            WIN.blit(text_render_shadow, (WIDTH // 2 - text_render.get_width() // 2 - 3,
+                                   HEIGHT // 2 - text_render.get_height() // 2 - 3))
             WIN.blit(text_render, (WIDTH // 2 - text_render.get_width() // 2,
                                    HEIGHT // 2 - text_render.get_height() // 2))
         elif time_tuple[1] <= right_now:
@@ -244,7 +258,7 @@ def handle_movement(event, buddy_rect, current_grid_coordinates, grid, zoomed_gr
     if len(next_buddy_xy) > 0:
         # do not allow new inputs when animation not complete
         return current_grid_coordinates
-    if event.key == pygame.K_w:
+    if event.key == pygame.K_w or event.key == pygame.K_UP:
         moved_coordinates = (current_grid_coordinates[0], current_grid_coordinates[1] - 1)
         if UP in walls[current_grid_coordinates]:  # there is a wall above us
             return current_grid_coordinates
@@ -269,7 +283,7 @@ def handle_movement(event, buddy_rect, current_grid_coordinates, grid, zoomed_gr
                 buddy_rect.y = buddy_rect.y - ZOOMED_WALL_HEIGHT // FRAMES_PER_MOVE
                 return moved_coordinates
 
-    elif event.key == pygame.K_s:
+    elif event.key == pygame.K_s or event.key == pygame.K_DOWN:
         moved_coordinates = (current_grid_coordinates[0], current_grid_coordinates[1] + 1)
         if DOWN in walls[current_grid_coordinates]:  # there is a wall below us
             return current_grid_coordinates
@@ -293,7 +307,7 @@ def handle_movement(event, buddy_rect, current_grid_coordinates, grid, zoomed_gr
             if xy != 0:
                 buddy_rect.y = buddy_rect.y + ZOOMED_WALL_HEIGHT // FRAMES_PER_MOVE
                 return moved_coordinates
-    elif event.key == pygame.K_a:
+    elif event.key == pygame.K_a or event.key == pygame.K_LEFT:
         moved_coordinates = (current_grid_coordinates[0] - 1, current_grid_coordinates[1])
         if LEFT in walls[current_grid_coordinates]:  # there is a wall to the left of us
             return current_grid_coordinates
@@ -317,7 +331,7 @@ def handle_movement(event, buddy_rect, current_grid_coordinates, grid, zoomed_gr
             if xy != 0:
                 buddy_rect.x = buddy_rect.x - ZOOMED_WALL_WIDTH // FRAMES_PER_MOVE
                 return moved_coordinates
-    elif event.key == pygame.K_d:
+    elif event.key == pygame.K_d or event.key == pygame.K_RIGHT:
         moved_coordinates = (current_grid_coordinates[0] + 1, current_grid_coordinates[1])
         if RIGHT in walls[current_grid_coordinates]:  # there is a wall to the right of us
             return current_grid_coordinates
@@ -386,8 +400,8 @@ def game():
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_RETURN:
                     title_mode = False
-                    add_item_to_text_needing_acknowledgement(text_needing_acknowledgement, 'Press any button to start!',
-                                                             WHITE)
+                    add_item_to_text_needing_acknowledgement(text_needing_acknowledgement, 'Press Enter to start!',
+                                                             GREEN)
 
     while run or len(text_to_show) > 0 or len(text_needing_acknowledgement) > 0:
         clock.tick(FPS)
@@ -410,14 +424,14 @@ def game():
                 pygame.quit()
                 continue
             if event.type == pygame.KEYDOWN:
-                if len(text_needing_acknowledgement) > 0:
+                if event.key == pygame.K_RETURN and len(text_needing_acknowledgement) > 0:
                     del text_needing_acknowledgement[0]
                     if run:
                         right_now = pygame.time.get_ticks()
-                        add_item_to_text_to_show(text_to_show, '3', WHITE, right_now + 1000, right_now + 2000)
-                        add_item_to_text_to_show(text_to_show, '2', WHITE, right_now + 2000, right_now + 3000)
-                        add_item_to_text_to_show(text_to_show, '1', WHITE, right_now + 3000, right_now + 4000)
-                else:
+                        add_item_to_text_to_show(text_to_show, '3', GREEN, right_now + 1000, right_now + 2000)
+                        add_item_to_text_to_show(text_to_show, '2', GREEN, right_now + 2000, right_now + 3000)
+                        add_item_to_text_to_show(text_to_show, '1', GREEN, right_now + 3000, right_now + 4000)
+                elif len(text_needing_acknowledgement) < 1:  # only move when there is no text
                     if not completed_maze:
                         current_grid_coordinates = handle_movement(event, buddy_rect, current_grid_coordinates,
                                                                    location_grid, zoomed_location_grid, current_maze[0],
@@ -431,7 +445,7 @@ def game():
 
         draw_window(frames_string, buddy_rect, location_grid, zoomed_location_grid, current_maze[0], current_maze[1], completed_maze,
                     start_time, remaining_lives, allowed_time, text_to_show,
-                    text_needing_acknowledgement, zoomed, map_surfaces, zoomed_map_surfaces)
+                    text_needing_acknowledgement, zoomed, map_surfaces, zoomed_map_surfaces, current_maze_index + 1)
 
         # if they have completed the mze, wait for three seconds, and then move them to the next one, if there is one
         if completed_maze and time_completed_maze + 3000 < pygame.time.get_ticks() and current_maze_index < 6:
@@ -445,33 +459,34 @@ def game():
             buddy_rect.y = xy[1]
             start_time = pygame.time.get_ticks()
             allowed_time = SECONDS_PER_MAZE
+            map_surfaces, zoomed_map_surfaces = generate_surfaces(current_maze[0], location_grid, zoomed_location_grid, current_maze[1])
             add_item_to_text_needing_acknowledgement(text_needing_acknowledgement,
-                                                     'New Maze! Press any button to start.', WHITE)
+                                                     'New Maze! Press Enter to start.', GREEN)
 
         if get_seconds_since_maze_start(start_time) > allowed_time:
             # they ran out of time. They need to be reset.
             right_now = pygame.time.get_ticks()
-            add_item_to_text_to_show(text_to_show, 'Time Up!', WHITE, right_now, right_now + 2000)
+            add_item_to_text_to_show(text_to_show, 'Time Up!', GREEN, right_now, right_now + 2000)
             timer_change_string = 'Time Increase - ' + str(allowed_time) + '->' + str(allowed_time + 7)
-            add_item_to_text_to_show(text_to_show, timer_change_string, WHITE, right_now + 2000, right_now + 2500)
-            add_item_to_text_to_show(text_to_show, '', WHITE, right_now + 2500, right_now + 3000)
-            add_item_to_text_to_show(text_to_show, timer_change_string, WHITE, right_now + 3000, right_now + 3500)
-            add_item_to_text_to_show(text_to_show, '', WHITE, right_now + 3500, right_now + 4000)
-            add_item_to_text_to_show(text_to_show, timer_change_string, WHITE, right_now + 4000, right_now + 4500)
-            add_item_to_text_to_show(text_to_show, 'Lives: ' + str(remaining_lives), WHITE, right_now + 4500,
+            add_item_to_text_to_show(text_to_show, timer_change_string, GREEN, right_now + 2000, right_now + 2500)
+            add_item_to_text_to_show(text_to_show, '', GREEN, right_now + 2500, right_now + 3000)
+            add_item_to_text_to_show(text_to_show, timer_change_string, GREEN, right_now + 3000, right_now + 3500)
+            add_item_to_text_to_show(text_to_show, '', GREEN, right_now + 3500, right_now + 4000)
+            add_item_to_text_to_show(text_to_show, timer_change_string, GREEN, right_now + 4000, right_now + 4500)
+            add_item_to_text_to_show(text_to_show, 'Lives: ' + str(remaining_lives), GREEN, right_now + 4500,
                                      right_now + 5500)
             remaining_lives -= 1
             if remaining_lives < 0:
                 run = False
                 restart = True
-                add_item_to_text_to_show(text_to_show, 'Game Over! Restarting game...', WHITE, right_now + 5500,
+                add_item_to_text_to_show(text_to_show, 'Game Over! Restarting game...', GREEN, right_now + 5500,
                                          right_now + 8500)
             else:
-                add_item_to_text_to_show(text_to_show, 'Lives: ' + str(remaining_lives), WHITE, right_now + 5500,
+                add_item_to_text_to_show(text_to_show, 'Lives: ' + str(remaining_lives), GREEN, right_now + 5500,
                                          right_now + 6500)
-                add_item_to_text_to_show(text_to_show, '3', WHITE, right_now + 6500, right_now + 7500)
-                add_item_to_text_to_show(text_to_show, '2', WHITE, right_now + 7500, right_now + 8500)
-                add_item_to_text_to_show(text_to_show, '1', WHITE, right_now + 8500, right_now + 9500)
+                add_item_to_text_to_show(text_to_show, '3', GREEN, right_now + 6500, right_now + 7500)
+                add_item_to_text_to_show(text_to_show, '2', GREEN, right_now + 7500, right_now + 8500)
+                add_item_to_text_to_show(text_to_show, '1', GREEN, right_now + 8500, right_now + 9500)
                 current_grid_coordinates = STARTING_COORDINATES
                 xy = get_xy_from_coordinates(current_grid_coordinates, location_grid)
                 buddy_rect.x = xy[0]
@@ -483,7 +498,8 @@ def game():
         if completed_maze and current_maze_index == 6:
             # completed game
             game_completion_string = "CONGRATULATIONS! "
-            game_completion_string += "Time: " + str((pygame.time.get_ticks() - game_begin_time) // 1000)
+            game_completion_string += "Total Completion Time: " + str((pygame.time.get_ticks() - game_begin_time) // 1000)
+            game_completion_string += ". To restart the game, press Enter."
             add_item_to_text_needing_acknowledgement(text_needing_acknowledgement, game_completion_string, GREEN)
             current_maze_index += 1
             run = False

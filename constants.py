@@ -28,7 +28,11 @@ STARTING_COORDINATES = (GRID_WIDTH // 2, GRID_HEIGHT // 2)
 # colours
 WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
+PINK = (219, 13, 188)
+ORANGE = (232, 121, 0)
 RED = (255, 0, 0)
+BLUE = (0, 0, 255)
+TRON = (0, 162, 232)
 GREEN = (0, 255, 0)
 YELLOW = (255, 255, 0)
 IDK = (120, 240, 90)
@@ -37,6 +41,6 @@ WALL_COLOUR = (195, 195, 195)
 
 FPS = 60  # more needs to be done here when frames are dropped - at this point, it will simply slow down the game.
 
-SECONDS_PER_MAZE = 47
+SECONDS_PER_MAZE = 21
 
 TOTAL_LIVES = 7

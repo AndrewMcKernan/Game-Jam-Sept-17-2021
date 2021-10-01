@@ -30,11 +30,15 @@ def drawText(surface, text, color, rect, font, aa=False, bkg=None):
         # render the line and blit it to the surface
         if bkg:
             image = font.render(text[:i], 1, color, bkg)
+            image2 = font.render(text[:i], 1, (0, 0, 0), bkg)
             image.set_colorkey(bkg)
         else:
             image = font.render(text[:i], aa, color)
+            image2 = font.render(text[:i], 1, (0, 0, 0), bkg)
 
-        surface.blit(image, (rect.left, y))
+
+        surface.blit(image2, (rect.left, y))
+        surface.blit(image, (rect.left + 2, y + 2))
         y += fontHeight + lineSpacing
 
         # remove the text we just blitted
