@@ -17,3 +17,5 @@ All the art assets were made by me. The music was made by Nicole Marie T, found 
 Thank you for playing!
 
 This game was made using pygame with the PyCharm Community Edition 2020.2 IDE. 
+
+You can download an executable version of the game from https://drive.google.com/file/d/1hzdy9CYk_PMdCVhQXBy5nvj6ykERrZZg/view?usp=sharing
