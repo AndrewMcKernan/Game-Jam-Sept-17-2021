@@ -4,16 +4,18 @@ The repo for the beginner jam at https://itch.io/jam/level-up-circle-beginner-ja
 
 The theme for this game jam is "7". 
 
-Here is my idea:
+You play as the Septopus, an illegally modified octopus with 7 tentacles. 
 
-You are a friendly slime, created by the 7th general of the Eternian High Command.
+You must nagivate through 7 mazes, and have 7 attempts to do so - one for each tentacle. 
 
-To see whether you will be of use, the Eternian general subjects you to a test.
+You have 21 (7*3) seconds to make it through each maze. If you fail, 7 seconds will be added to your timer to give you some extra time.
 
-You must navigate 7 mazes in 77 seconds (or some amount of time related to 7). You will have 7 attempts to navigate all 7 within the time limit. 
+The mazes are randomly generated each time you play the game. 
 
-Should you fail, you will be executed!
+All the art assets were made by me. The music was made by Nicole Marie T, found here: https://nicolemariet.itch.io/spy-8-bit-16-bit
 
-The 7 mazes will be randomly generated, and will be the same for each of your 7 attempts. This should allow you to learn the layout and complete them quickly. 
+Thank you for playing!
 
-When you die, you must restart the game, with all new layouts for the 7 mazes.
+This game was made using pygame with the PyCharm Community Edition 2020.2 IDE. 
+
+You can download an executable version of the game from https://drive.google.com/file/d/1hzdy9CYk_PMdCVhQXBy5nvj6ykERrZZg/view?usp=sharing
